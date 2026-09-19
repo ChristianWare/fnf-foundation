@@ -1,0 +1,374 @@
+.btn {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.8rem;
+  text-align: center;
+  /* border-radius: 5px; */
+  border-radius: 50px;
+  padding: 6px 6px 6px 18px;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.8px;
+  transition: all 0.2s ease-in-out;
+  white-space: nowrap;
+  cursor: pointer;
+  /* text-transform: capitalize; */
+  line-height: 1;
+  user-select: none;
+}
+
+.btn:link,
+.btn:visited {
+  color: inherit;
+}
+
+/* ================================
+   Text Flip Animation Styles
+   ================================ */
+.textContainer {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  color: inherit;
+}
+
+.textPrimary,
+.textSecondary {
+  display: block;
+  color: currentColor;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+
+.textPrimary {
+  position: relative;
+}
+
+.textSecondary {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ================================
+   Arrow Slide Animation Styles
+   ================================ */
+.arrowContainer,
+.plusContainer {
+  background-color: var(--white);
+  /* border-radius: 4px 4px 10px; */
+  border-radius: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow: hidden;
+}
+
+.arrowWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
+  overflow: hidden;
+}
+
+.arrowPrimary,
+.arrowSecondary {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.arrow {
+  color: var(--black);
+  transform: rotate(90deg);
+}
+
+.optionalIcon {
+  color: var(--black);
+  position: relative;
+  top: 2px;
+  width: 2rem;
+  height: 2rem;
+}
+
+.plusContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ================================
+   Button Variants
+   ================================ */
+.underlinedWhite,
+.underlinedWhite:link,
+.underlinedWhite:visited {
+  background-color: transparent;
+  color: var(--white);
+  /* border-bottom: 1px solid var(--white); */
+  border-radius: 0px;
+  padding: 5px 0px;
+  font-size: 2rem;
+
+  justify-content: space-between;
+}
+
+.underlinedBlack,
+.underlinedBlack:link,
+.underlinedBlack:visited {
+  background-color: transparent;
+  color: var(--black);
+  font-size: 2rem;
+  /* border-bottom: 3px solid var(--stroke); */
+  border-radius: 0px;
+  padding: 5px 0px;
+  justify-content: space-between;
+}
+
+.underlinedBlack .arrowContainer {
+  background-color: var(--accent);
+}
+
+.underlinedBlack .arrowContainer .arrow {
+  color: var(--white);
+}
+
+.underlinedBlackii,
+.underlinedBlackii:link,
+.underlinedBlackii:visited {
+  background-color: transparent;
+  color: var(--black);
+  font-size: 2rem;
+  border-bottom: 1px solid var(--black);
+  border-radius: 0px;
+  padding: 5px 0px;
+  padding-bottom: 10px;
+  justify-content: space-between;
+}
+
+.underlinedBlackii .arrowContainer {
+  background-color: var(--black);
+}
+
+.underlinedBlackii .arrowContainer .arrow {
+  color: var(--white);
+}
+
+.black,
+.black:link,
+.black:visited {
+  background-color: var(--black);
+  color: var(--white);
+  border: 1px solid var(--black);
+  display: flex;
+  justify-content: space-between;
+}
+
+.blackAdmin,
+.blackAdmin:link,
+.blackAdmin:visited {
+  background-color: var(--black);
+  color: var(--white);
+  border: 1px solid var(--black);
+  display: flex;
+  justify-content: space-between;
+}
+
+.white,
+.white:link,
+.white:visited {
+  background-color: var(--white);
+  color: var(--black);
+  border: 1px solid var(--white);
+  display: flex;
+  justify-content: space-between;
+}
+
+.white .arrowContainer {
+  background-color: var(--black);
+}
+
+.white .arrowContainer .arrow {
+  color: var(--white);
+}
+
+.gray,
+.gray:link,
+.gray:visited {
+  background-color: var(--stroke);
+  color: var(--black);
+  border: 1px solid var(--strokeii);
+  display: flex;
+  justify-content: space-between;
+}
+
+.red,
+.red:link,
+.red:visited {
+  background-color: var(--accent);
+  color: var(--white);
+  border: 1px solid var(--accent600);
+  display: flex;
+  justify-content: space-between;
+}
+
+.green,
+.green:link,
+.green:visited {
+  background-color: var(--green);
+  color: var(--white);
+  border: 1px solid var(--darkGreen);
+  display: flex;
+  justify-content: space-between;
+}
+
+.greenii,
+.greenii:link,
+.greenii:visited {
+  background-color: var(--lighterGreen);
+  color: var(--green);
+  font-weight: 700;
+  letter-spacing: normal;
+  border: 1px solid var(--darkGreen);
+  display: flex;
+  justify-content: space-between;
+}
+
+.lightRed,
+.lightRed:link,
+.lightRed:visited {
+  background-color: #0000001a;
+  color: var(--black);
+  border: 1px solid var(--accent);
+  display: flex;
+  justify-content: space-between;
+}
+
+.cream,
+.cream:link,
+.cream:visited {
+  background-color: var(--cream);
+  color: var(--black);
+  border: 1px solid var(--strokeii);
+  display: flex;
+  justify-content: space-between;
+}
+
+.blackOutline {
+  background-color: transparent;
+  color: var(--black);
+  border: 1px solid var(--black);
+}
+
+.transparent {
+  color: var(--white) !important;
+  background-color: #ffffff1a;
+  display: flex;
+  justify-content: space-between;
+}
+
+.blackReg {
+  background-color: var(--black);
+  color: var(--white) !important;
+  border: 1px solid var(--black);
+  border-radius: 5px;
+  display: flex;
+  justify-content: center;
+  padding: 8px 15px;
+}
+
+.blackRegSmall {
+  background-color: var(--black);
+  color: var(--white) !important;
+  border: 1px solid var(--black);
+  border-radius: 5px;
+  display: flex;
+  justify-content: center;
+  padding: 5px 10px;
+  font-size: 1.4rem;
+}
+
+.greenReg {
+  background-color: var(--green);
+  color: var(--white) !important;
+  border: 1px solid var(--darkGreen);
+  border-radius: 5px;
+  display: flex;
+  justify-content: center;
+  padding: 8px 15px;
+}
+
+.redReg {
+  background-color: var(--accent);
+  color: var(--white) !important;
+  border: 1px solid var(--accent600);
+  border-radius: 5px;
+  display: flex;
+  justify-content: center;
+  padding: 8px 15px;
+}
+
+.grayReg {
+  background-color: var(--black300);
+  color: var(--black) !important;
+  border: 1px solid var(--black300);
+  border-radius: 5px;
+  display: flex;
+  justify-content: center;
+  padding: 8px 15px;
+}
+
+.blueReg {
+  background-color: var(--blue);
+  color: var(--white) !important;
+  border: 1px solid var(--blue);
+  border-radius: 5px;
+  display: flex;
+  justify-content: center;
+  padding: 8px 15px;
+}
+
+/* ================================
+   HOVER STATES - Desktop only
+   ================================ */
+@media (hover: hover) and (pointer: fine) {
+  .blackReg:hover {
+    background-color: var(--black400);
+    border: 1px solid var(--black400);
+  }
+
+  .greenReg:hover {
+    background-color: var(--darkGreen);
+    border: 1px solid var(--darkGreen);
+  }
+}

@@ -1,0 +1,2281 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import styles from "./AdminStyles.module.css";
+import { unstable_noStore as noStore } from "next/cache";
+import AdminPageIntro from "@/components/admin/AdminPageIntro/AdminPageIntro";
+import AdminAlerts, {
+  AlertItem,
+} from "@/components/admin/AdminAlerts/AdminAlerts";
+import AdminScheduleSnapshot from "@/components/admin/AdminScheduleSnapshot/AdminScheduleSnapshot";
+import AdminDriverSnapshot from "@/components/admin/AdminDriverSnapshot/AdminDriverSnapshot";
+import AdminVehicleSnapshot, {
+  VehicleCategoryReadiness,
+} from "@/components/admin/AdminVehicleSnapshot/AdminVehicleSnapshot";
+import AdminActivityFeed, {
+  AdminActivityItem,
+} from "@/components/admin/AdminActivityFeed/AdminActivityFeed";
+import AdminRecentBookingRequests, {
+  RecentBookingRequestItem,
+} from "@/components/admin/AdminRecentBookingRequests/AdminRecentBookingRequests";
+import AdminUpcomingRides, {
+  UpcomingRideItem,
+} from "@/components/admin/Adminupcomingrides/Adminupcomingrides";
+import AdminFinanceSnapshot from "@/components/admin/AdminFinanceSnapshot/AdminFinanceSnapshot";
+import AdminPaymentsSnapshot, {
+  PaymentItem,
+} from "@/components/admin/AdminPaymentsSnapshot/AdminPaymentsSnapshot";
+import AdminTodaysRides from "@/components/admin/AdminTodaysRides/AdminTodaysRides";
+import AdminRideCalendar from "@/components/admin/AdminRideCalendar/AdminRideCalendar";
+
+import { db } from "@/lib/db";
+import { getCompanySettings } from "../../../actions/admin/companySettings";
+import * as tz from "@/lib/timezone";
+import { getBookingWizardSetupAlerts } from "./lib/getBookingWizardSetupAlerts";
+import { getAdminFinanceSnapshot } from "./lib/getAdminFinanceSnapshot";
+import AdminQuickActions from "@/components/admin/AdminQuickActions/AdminQuickActions";
+import AdminIncompleteApprovals, {
+  IncompleteApprovalItem,
+} from "@/components/admin/AdminIncompleteApprovals/AdminIncompleteApprovals";
+import AdminOutstandingBalances, {
+  OutstandingBalanceItem,
+} from "@/components/admin/AdminOutstandingBalances/AdminOutstandingBalances";
+import AdminIncompleteRides, {
+  IncompleteRideItem,
+} from "@/components/admin/AdminIncompleteRides/AdminIncompleteRides";
+import AdminDashboardTabs from "@/components/admin/AdminDashboardTabs/AdminDashboardTabs";
+import AdminInvoicesSnapshot, {
+  AdminInvoiceItem,
+} from "@/components/admin/AdminInvoicesSnapshot/AdminInvoicesSnapshot";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
+function shortAddress(address: string) {
+  if (!address) return "";
+  return address.split(",")[0]?.trim() || address;
+}
+
+function actorLabel(
+  user: { name: string | null; email: string } | null | undefined,
+) {
+  if (!user) return "System";
+  return user.name?.trim() || user.email;
+}
+
+function customerLabel(
+  user: { name: string | null; email: string } | null | undefined,
+) {
+  if (!user) return "Customer";
+  return user.name?.trim() || user.email;
+}
+
+function statusLabel(status: string) {
+  return status.replaceAll("_", " ").toLowerCase();
+}
+
+function monthKey(d: Date) {
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  return `${y}-${m}`;
+}
+
+function ymdFromUtcDate(d: Date) {
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/**
+ * Finance helpers
+ */
+async function safeCapturedAgg({
+  from,
+  to,
+}: {
+  from: Date;
+  to: Date;
+}): Promise<{ sumCents: number; count: number; avgCents: number }> {
+  try {
+    const agg = await (db.payment as any).aggregate({
+      where: { paidAt: { gte: from, lt: to } },
+      _sum: { amountPaidCents: true },
+      _avg: { amountPaidCents: true },
+      _count: { _all: true },
+    });
+
+    const sumCents = Number(agg?._sum?.amountPaidCents ?? 0);
+    const avgCents = Number(agg?._avg?.amountPaidCents ?? 0);
+    const count = Number(agg?._count?._all ?? 0);
+
+    return { sumCents, count, avgCents };
+  } catch {
+    const rows = await db.payment.findMany({
+      where: { paidAt: { gte: from, lt: to } },
+    });
+
+    const sumCents = (rows as any[]).reduce((sum, p) => {
+      const v = p.amountPaidCents ?? 0;
+
+      return sum + Number(v || 0);
+    }, 0);
+
+    const count = rows.length;
+    const avgCents = count > 0 ? Math.round(sumCents / count) : 0;
+
+    return { sumCents, count, avgCents };
+  }
+}
+
+async function safeRefundAgg({
+  from,
+  to,
+}: {
+  from: Date;
+  to: Date;
+}): Promise<{ sumCents: number; count: number }> {
+  try {
+    const agg = await (db.payment as any).aggregate({
+      where: {
+        refundedAt: { gte: from, lt: to },
+      },
+      _sum: { refundedCents: true },
+      _count: { _all: true },
+    });
+
+    const sumCents = Number(agg?._sum?.refundedCents ?? 0);
+    const count = Number(agg?._count?._all ?? 0);
+
+    return { sumCents, count };
+  } catch {
+    return { sumCents: 0, count: 0 };
+  }
+}
+
+async function safePendingPaymentEstimate(): Promise<{
+  sumCents: number;
+}> {
+  try {
+    const agg = await (db.payment as any).aggregate({
+      where: {
+        paidAt: null,
+        checkoutUrl: { not: null },
+        booking: { status: "PENDING_PAYMENT" },
+      },
+      _sum: { amountTotalCents: true },
+    });
+
+    return { sumCents: Number(agg?._sum?.amountTotalCents ?? 0) };
+  } catch {
+    const rows = await (db.payment as any).findMany({
+      where: {
+        paidAt: null,
+        checkoutUrl: { not: null },
+        booking: { status: "PENDING_PAYMENT" },
+      },
+    });
+
+    const sumCents = (rows as any[]).reduce((sum, p) => {
+      const v = p.amountTotalCents ?? 0;
+
+      return sum + Number(v || 0);
+    }, 0);
+
+    return { sumCents };
+  }
+}
+
+// Transform payment data helper
+function transformPayment(p: any, isLink = false): PaymentItem {
+  const customerName =
+    p.booking?.user?.name?.trim() || p.booking?.guestName?.trim() || "Customer";
+  const customerEmail = p.booking?.user?.email || p.booking?.guestEmail || null;
+
+  return {
+    id: p.id,
+    bookingId: p.booking?.id ?? "",
+    paidAt: isLink ? (p.updatedAt ?? p.createdAt) : p.paidAt,
+    amountCents: p.amountPaidCents ?? p.amountTotalCents ?? p.amountCents ?? 0,
+    tipCents: p.tipCents ?? 0,
+    currency: p.currency ?? "usd",
+    status: p.paidAt ? "PAID" : "PENDING",
+    customerName,
+    customerEmail,
+    pickupAddress: p.booking?.pickupAddress ?? "",
+    dropoffAddress: p.booking?.dropoffAddress ?? "",
+    serviceName: p.booking?.serviceType?.name ?? "—",
+  };
+}
+
+export default async function AdminHome() {
+  noStore();
+
+  const { timezone: companyTz } = await getCompanySettings();
+
+  const now = new Date();
+  const todayStart = tz.startOfDay(now, companyTz);
+  const tomorrowStart = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+  const dayAfterStart = new Date(tomorrowStart.getTime() + 24 * 60 * 60 * 1000);
+  const weekStart = tz.startOfWeek(now, companyTz);
+  const next3h = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+  const next12h = new Date(now.getTime() + 12 * 60 * 60 * 1000);
+  const next24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const stuckCutoff = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+  const verifiedCutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const corporate48hCutoff = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+  const incompleteRidesCutoff = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+
+  // Month boundaries (used for calendar and finance)
+  const baseMonth = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 12, 0, 0),
+  );
+  const monthStart = tz.startOfMonth(now, companyTz);
+  const nextMonthStart = tz.addMonths(monthStart, 1, companyTz);
+  const prevMonthStart = tz.addMonths(monthStart, -1, companyTz);
+
+  const cancelledLike = [
+    "CANCELLED",
+    "COMPLETED",
+    "REFUNDED",
+    "NO_SHOW",
+  ] as const;
+
+  // For today's rides - we WANT to show completed rides
+  const todayExcluded = ["CANCELLED", "REFUNDED", "NO_SHOW"] as const;
+  const [
+    pendingReview,
+    pendingPayment,
+    confirmed,
+
+    unassignedWithin24hCount,
+    pendingPaymentWithin12hCount,
+
+    unassignedSoon,
+    pendingPaymentSoon,
+    stuckReview,
+
+    // All unassigned future bookings
+    allUnassignedCount,
+    allUnassignedBookings,
+
+    todayTotal,
+    todayConfirmed,
+    todayUnassigned,
+    tomorrowTotal,
+    tomorrowConfirmed,
+    tomorrowUnassigned,
+    tripsNext3Hours,
+    earliestUpcoming,
+
+    activeDrivers,
+    driversAssignedTodayDistinct,
+
+    activeUnits,
+    inactiveUnits,
+    activeUnitsByCategory,
+    assignedActiveUnitsToday,
+
+    recentBookingRequestsRaw,
+
+    upcomingRidesRaw,
+
+    recentStatusEvents,
+    recentAssignments,
+    recentPaymentsReceived,
+    recentPaymentLinks,
+
+    newVerifiedUsersCount,
+    latestVerifiedUser,
+
+    paymentsReceivedTodayRaw,
+    paymentsReceivedWeekRaw,
+    paymentLinksTodayRaw,
+    paymentLinksWeekRaw,
+    todaysRidesRaw,
+    calendarRidesRaw,
+    calendarBlackoutsRaw,
+    recentTipsRaw,
+    balanceDueBookingsRaw,
+    unpaidUpcomingTripsRaw,
+    upcomingAssignmentsForOverlapCheck,
+    pendingCorporateInquiries,
+    incompleteApprovalsRaw,
+    pendingPaymentBookingsRaw,
+    incompleteRidesRaw,
+  ] = await Promise.all([
+    db.booking.count({ where: { status: "PENDING_REVIEW" } }),
+    db.booking.count({ where: { status: "PENDING_PAYMENT" } }),
+    db.booking.count({ where: { status: "CONFIRMED" } }),
+
+    db.booking.count({
+      where: {
+        pickupAt: { gte: now, lt: next24h },
+        assignment: { is: null },
+        NOT: { status: { in: cancelledLike as any } },
+      },
+    }),
+
+    db.booking.count({
+      where: {
+        status: "PENDING_PAYMENT",
+        pickupAt: { gte: now, lt: next12h },
+      },
+    }),
+
+    db.booking.findMany({
+      where: {
+        pickupAt: { gte: now, lt: next24h },
+        assignment: { is: null },
+        NOT: { status: { in: cancelledLike as any } },
+      },
+      orderBy: [{ pickupAt: "asc" }],
+      take: 5,
+      select: {
+        id: true,
+        pickupAt: true,
+        createdAt: true,
+        status: true,
+        pickupAddress: true,
+        dropoffAddress: true,
+        user: { select: { name: true, email: true } },
+        guestName: true,
+        guestEmail: true,
+        guestPhone: true,
+        serviceType: { select: { name: true } },
+        assignment: {
+          select: { driver: { select: { name: true, email: true } } },
+        },
+      },
+    }),
+
+    db.booking.findMany({
+      where: {
+        status: "PENDING_PAYMENT",
+        pickupAt: { gte: now, lt: next24h },
+      },
+      orderBy: [{ pickupAt: "asc" }],
+      take: 5,
+      select: {
+        id: true,
+        pickupAt: true,
+        createdAt: true,
+        status: true,
+        pickupAddress: true,
+        dropoffAddress: true,
+        user: { select: { name: true, email: true } },
+        guestName: true,
+        guestEmail: true,
+        guestPhone: true,
+        serviceType: { select: { name: true } },
+        assignment: {
+          select: { driver: { select: { name: true, email: true } } },
+        },
+      },
+    }),
+
+    db.booking.findMany({
+      where: {
+        status: "PENDING_REVIEW",
+        createdAt: { lt: stuckCutoff },
+        pickupAt: { gte: now },
+      },
+      orderBy: [{ createdAt: "asc" }],
+      take: 5,
+      select: {
+        id: true,
+        pickupAt: true,
+        createdAt: true,
+        status: true,
+        pickupAddress: true,
+        dropoffAddress: true,
+        user: { select: { name: true, email: true } },
+        guestName: true,
+        guestEmail: true,
+        guestPhone: true,
+        serviceType: { select: { name: true } },
+        assignment: {
+          select: { driver: { select: { name: true, email: true } } },
+        },
+      },
+    }),
+
+    // ALL unassigned future bookings count
+    db.booking.count({
+      where: {
+        pickupAt: { gte: now },
+        assignment: { is: null },
+        NOT: { status: { in: cancelledLike as any } },
+      },
+    }),
+
+    // ALL unassigned future bookings list
+    db.booking.findMany({
+      where: {
+        pickupAt: { gte: now },
+        assignment: { is: null },
+        NOT: { status: { in: cancelledLike as any } },
+      },
+      orderBy: [{ pickupAt: "asc" }],
+      take: 10,
+      select: {
+        id: true,
+        pickupAt: true,
+        createdAt: true,
+        status: true,
+        pickupAddress: true,
+        dropoffAddress: true,
+        user: { select: { name: true, email: true } },
+        guestName: true,
+        guestEmail: true,
+        guestPhone: true,
+        serviceType: { select: { name: true } },
+      },
+    }),
+
+    db.booking.count({
+      where: {
+        pickupAt: { gte: todayStart, lt: tomorrowStart },
+        NOT: { status: { in: cancelledLike as any } },
+      },
+    }),
+    db.booking.count({
+      where: {
+        pickupAt: { gte: todayStart, lt: tomorrowStart },
+        status: "CONFIRMED",
+      },
+    }),
+    db.booking.count({
+      where: {
+        pickupAt: { gte: todayStart, lt: tomorrowStart },
+        assignment: { is: null },
+        NOT: { status: { in: cancelledLike as any } },
+      },
+    }),
+
+    db.booking.count({
+      where: {
+        pickupAt: { gte: tomorrowStart, lt: dayAfterStart },
+        NOT: { status: { in: cancelledLike as any } },
+      },
+    }),
+    db.booking.count({
+      where: {
+        pickupAt: { gte: tomorrowStart, lt: dayAfterStart },
+        status: "CONFIRMED",
+      },
+    }),
+    db.booking.count({
+      where: {
+        pickupAt: { gte: tomorrowStart, lt: dayAfterStart },
+        assignment: { is: null },
+        NOT: { status: { in: cancelledLike as any } },
+      },
+    }),
+
+    db.booking.count({
+      where: {
+        pickupAt: { gte: now, lt: next3h },
+        NOT: { status: { in: cancelledLike as any } },
+      },
+    }),
+
+    db.booking.findFirst({
+      where: {
+        pickupAt: { gte: now },
+        NOT: { status: { in: cancelledLike as any } },
+      },
+      orderBy: [{ pickupAt: "asc" }],
+      select: { pickupAt: true },
+    }),
+
+    db.user.count({ where: { roles: { has: "DRIVER" } } }),
+    db.assignment.findMany({
+      where: {
+        booking: {
+          pickupAt: { gte: todayStart, lt: tomorrowStart },
+          NOT: { status: { in: cancelledLike as any } },
+        },
+      },
+      select: { driverId: true },
+      distinct: ["driverId"],
+    }),
+
+    db.vehicleUnit.count({ where: { active: true } }),
+    db.vehicleUnit.count({ where: { active: false } }),
+    db.vehicleUnit.groupBy({
+      by: ["categoryId"],
+      where: { active: true },
+      _count: { _all: true },
+    }),
+    db.vehicleUnit.findMany({
+      where: {
+        active: true,
+        assignments: {
+          some: {
+            booking: {
+              pickupAt: { gte: todayStart, lt: tomorrowStart },
+              NOT: { status: { in: cancelledLike as any } },
+            },
+          },
+        },
+      },
+      select: { id: true, categoryId: true },
+      distinct: ["id"],
+    }),
+
+    // Recent booking requests - PENDING_REVIEW + recent corporate bookings
+    db.booking.findMany({
+      where: {
+        OR: [
+          { status: "PENDING_REVIEW" },
+          {
+            corporateAccountId: { not: null },
+            status: "CONFIRMED",
+            createdAt: { gte: corporate48hCutoff },
+          },
+        ],
+      },
+      orderBy: [{ createdAt: "desc" }],
+      take: 25,
+      select: {
+        id: true,
+        status: true,
+        createdAt: true,
+        pickupAt: true,
+        pickupAddress: true,
+        dropoffAddress: true,
+        specialRequests: true,
+        userId: true,
+        corporateAccountId: true,
+        user: { select: { name: true, email: true, emailVerified: true } },
+        guestName: true,
+        guestEmail: true,
+        guestPhone: true,
+        serviceType: { select: { name: true, airportLeg: true } },
+        vehicle: { select: { name: true } },
+        corporateAccount: { select: { name: true } },
+        corporatePassenger: { select: { name: true, email: true } },
+      },
+    }),
+
+    // Upcoming rides - CONFIRMED bookings with pickup in the future
+    db.booking.findMany({
+      where: {
+        pickupAt: { gte: now },
+        NOT: { status: { in: cancelledLike as any } }, // ✅ Shows all non-cancelled bookings
+      },
+      orderBy: [{ pickupAt: "asc" }],
+      take: 100,
+      select: {
+        id: true,
+        status: true,
+        pickupAt: true,
+        pickupAddress: true,
+        dropoffAddress: true,
+        totalCents: true,
+        currency: true,
+        user: { select: { name: true, email: true } },
+        guestName: true,
+        guestEmail: true,
+        guestPhone: true,
+        serviceType: { select: { name: true } },
+        vehicle: { select: { name: true } },
+        assignment: {
+          select: {
+            driver: { select: { name: true, email: true } },
+          },
+        },
+      },
+    }),
+
+    db.bookingStatusEvent.findMany({
+      orderBy: [{ createdAt: "desc" }],
+      take: 10,
+      select: {
+        status: true,
+        createdAt: true,
+        booking: {
+          select: {
+            id: true,
+            pickupAddress: true,
+            dropoffAddress: true,
+            user: { select: { name: true, email: true } },
+          },
+        },
+        createdBy: { select: { name: true, email: true } },
+      },
+    }),
+
+    db.assignment.findMany({
+      orderBy: [{ assignedAt: "desc" }],
+      take: 10,
+      select: {
+        assignedAt: true,
+        booking: {
+          select: {
+            id: true,
+            pickupAddress: true,
+            dropoffAddress: true,
+            user: { select: { name: true, email: true } },
+          },
+        },
+        driver: { select: { name: true, email: true } },
+        vehicleUnit: { select: { name: true } },
+        assignedBy: { select: { name: true, email: true } },
+      },
+    }),
+
+    db.payment.findMany({
+      where: { paidAt: { not: null } },
+      orderBy: [{ paidAt: "desc" }],
+      take: 10,
+      select: {
+        paidAt: true,
+        booking: {
+          select: {
+            id: true,
+            pickupAddress: true,
+            dropoffAddress: true,
+            user: { select: { name: true, email: true } },
+          },
+        },
+      },
+    }),
+
+    db.payment.findMany({
+      where: { stripeCheckoutSessionId: { not: null } },
+      orderBy: [{ updatedAt: "desc" }],
+      take: 10,
+      select: {
+        updatedAt: true,
+        booking: {
+          select: {
+            id: true,
+            pickupAddress: true,
+            dropoffAddress: true,
+            user: { select: { name: true, email: true } },
+          },
+        },
+      },
+    }),
+
+    db.user.count({
+      where: {
+        emailVerified: { not: null, gte: verifiedCutoff },
+        createdAt: { gte: verifiedCutoff },
+      },
+    }),
+
+    db.user.findFirst({
+      where: {
+        emailVerified: { not: null, gte: verifiedCutoff },
+        createdAt: { gte: verifiedCutoff },
+      },
+      orderBy: [{ emailVerified: "desc" }],
+      select: { name: true, email: true, emailVerified: true },
+    }),
+
+    // Payments received today
+    db.payment.findMany({
+      where: {
+        paidAt: { gte: todayStart, lt: tomorrowStart },
+      },
+      orderBy: [{ paidAt: "desc" }],
+      take: 20,
+      select: {
+        id: true,
+        paidAt: true,
+        amountPaidCents: true,
+        amountTotalCents: true,
+        tipCents: true,
+        currency: true,
+        booking: {
+          select: {
+            id: true,
+            pickupAddress: true,
+            dropoffAddress: true,
+            user: { select: { name: true, email: true } },
+            guestName: true,
+            guestEmail: true,
+            serviceType: { select: { name: true } },
+          },
+        },
+      },
+    }),
+
+    // Payments received this week
+    db.payment.findMany({
+      where: {
+        paidAt: { gte: weekStart, lt: tomorrowStart },
+      },
+      orderBy: [{ paidAt: "desc" }],
+      take: 50,
+      select: {
+        id: true,
+        paidAt: true,
+        amountPaidCents: true,
+        amountTotalCents: true,
+        tipCents: true,
+        currency: true,
+        booking: {
+          select: {
+            id: true,
+            pickupAddress: true,
+            dropoffAddress: true,
+            user: { select: { name: true, email: true } },
+            guestName: true,
+            guestEmail: true,
+            serviceType: { select: { name: true } },
+          },
+        },
+      },
+    }),
+
+    // Payment links sent today
+    db.payment.findMany({
+      where: {
+        updatedAt: { gte: todayStart, lt: tomorrowStart },
+        checkoutUrl: { not: null },
+      },
+      orderBy: [{ updatedAt: "desc" }],
+      take: 20,
+      select: {
+        id: true,
+        paidAt: true,
+        updatedAt: true,
+        amountTotalCents: true,
+        amountPaidCents: true,
+        tipCents: true,
+        currency: true,
+        booking: {
+          select: {
+            id: true,
+            pickupAddress: true,
+            dropoffAddress: true,
+            user: { select: { name: true, email: true } },
+            guestName: true,
+            guestEmail: true,
+            serviceType: { select: { name: true } },
+          },
+        },
+      },
+    }),
+
+    // Payment links sent this week
+    db.payment.findMany({
+      where: {
+        updatedAt: { gte: weekStart, lt: tomorrowStart },
+        checkoutUrl: { not: null },
+      },
+      orderBy: [{ updatedAt: "desc" }],
+      take: 50,
+      select: {
+        id: true,
+        paidAt: true,
+        updatedAt: true,
+        amountTotalCents: true,
+        amountPaidCents: true,
+        tipCents: true,
+        currency: true,
+        booking: {
+          select: {
+            id: true,
+            pickupAddress: true,
+            dropoffAddress: true,
+            user: { select: { name: true, email: true } },
+            guestName: true,
+            guestEmail: true,
+            serviceType: { select: { name: true } },
+          },
+        },
+      },
+    }),
+    // Today's rides
+    db.booking.findMany({
+      where: {
+        pickupAt: { gte: todayStart, lt: tomorrowStart },
+        NOT: { status: { in: todayExcluded as any } },
+      },
+      orderBy: [{ pickupAt: "asc" }],
+      select: {
+        id: true,
+        status: true,
+        pickupAt: true,
+        pickupAddress: true,
+        dropoffAddress: true,
+        totalCents: true,
+        currency: true,
+        user: { select: { name: true, email: true, phone: true } },
+        guestName: true,
+        guestEmail: true,
+        guestPhone: true,
+        serviceType: { select: { name: true } },
+        vehicle: { select: { name: true } },
+        assignment: {
+          select: {
+            driver: { select: { name: true, email: true } },
+          },
+        },
+      },
+    }),
+
+    // Calendar: rides for current month
+    db.booking.findMany({
+      where: {
+        pickupAt: { gte: monthStart, lt: nextMonthStart },
+        NOT: { status: { in: cancelledLike as any } },
+      },
+      select: { pickupAt: true },
+    }),
+
+    // Calendar: blackout dates for current month
+    db.blackoutDate.findMany({
+      where: {
+        ymd: {
+          gte: tz.formatIsoDate(monthStart, companyTz),
+          lt: tz.formatIsoDate(nextMonthStart, companyTz),
+        },
+      },
+      select: { ymd: true },
+    }),
+    db.payment.findMany({
+      where: {
+        paidAt: { gte: verifiedCutoff },
+        tipCents: { gt: 0 },
+      },
+      orderBy: [{ paidAt: "desc" }],
+      take: 20,
+      select: {
+        id: true,
+        paidAt: true,
+        tipCents: true,
+        currency: true,
+        booking: {
+          select: {
+            id: true,
+            pickupAddress: true,
+            dropoffAddress: true,
+            user: { select: { name: true, email: true } },
+            guestName: true,
+            guestEmail: true,
+            serviceType: { select: { name: true } },
+            assignment: {
+              select: {
+                driver: { select: { name: true } },
+              },
+            },
+          },
+        },
+      },
+    }),
+    // Bookings with balance due (paid but total increased)
+    db.booking.findMany({
+      where: {
+        payment: {
+          status: "PAID",
+          amountPaidCents: { gt: 0 },
+        },
+        NOT: { status: { in: ["CANCELLED", "REFUNDED", "NO_SHOW"] as any } },
+      },
+      orderBy: [{ pickupAt: "asc" }],
+      select: {
+        id: true,
+        pickupAt: true,
+        totalCents: true,
+        currency: true,
+        status: true,
+        pickupAddress: true,
+        dropoffAddress: true,
+        user: { select: { name: true, email: true } },
+        guestName: true,
+        guestEmail: true,
+        serviceType: { select: { name: true } },
+        payment: {
+          select: {
+            amountPaidCents: true,
+            amountTotalCents: true,
+          },
+        },
+      },
+    }),
+
+    // ADD: Trips starting within 24h with unpaid balance
+    db.booking.findMany({
+      where: {
+        pickupAt: { gte: now, lt: next24h },
+        payment: {
+          status: "PAID",
+          amountPaidCents: { gt: 0 },
+        },
+        NOT: { status: { in: ["CANCELLED", "REFUNDED", "NO_SHOW"] as any } },
+      },
+      orderBy: [{ pickupAt: "asc" }],
+      take: 20,
+      select: {
+        id: true,
+        pickupAt: true,
+        totalCents: true,
+        durationMinutes: true,
+        currency: true,
+        status: true,
+        pickupAddress: true,
+        dropoffAddress: true,
+        user: { select: { name: true, email: true } },
+        guestName: true,
+        guestEmail: true,
+        serviceType: { select: { name: true } },
+        payment: {
+          select: {
+            amountPaidCents: true,
+          },
+        },
+      },
+    }),
+
+    // ADD: Upcoming assignments to check for driver overlaps
+    db.assignment.findMany({
+      where: {
+        booking: {
+          pickupAt: { gte: now },
+          NOT: {
+            status: {
+              in: ["CANCELLED", "REFUNDED", "NO_SHOW", "COMPLETED"] as any,
+            },
+          },
+        },
+      },
+      orderBy: { booking: { pickupAt: "asc" } },
+      select: {
+        id: true,
+        driverId: true,
+        driver: { select: { name: true, email: true } },
+        booking: {
+          select: {
+            id: true,
+            pickupAt: true,
+            durationMinutes: true,
+            pickupAddress: true,
+            dropoffAddress: true,
+            user: { select: { name: true, email: true } },
+            guestName: true,
+            serviceType: { select: { name: true } },
+          },
+        },
+      },
+    }),
+    db.corporateInquiry.count({
+      where: { status: "PENDING" },
+    }),
+    // Bookings with incomplete approvals (future, non-cancelled)
+    db.booking.findMany({
+      where: {
+        pickupAt: { gte: now },
+        NOT: { status: { in: cancelledLike as any } },
+        OR: [
+          { routeApproved: false },
+          { priceApproved: false },
+          { assignment: { is: null } },
+          {
+            assignment: {
+              is: {
+                OR: [{ driverPaymentCents: null }, { driverPaymentCents: 0 }],
+              },
+            },
+          },
+        ],
+      },
+      orderBy: [{ pickupAt: "asc" }],
+      take: 50,
+      select: {
+        id: true,
+        status: true,
+        createdAt: true,
+        pickupAt: true,
+        pickupAddress: true,
+        dropoffAddress: true,
+        totalCents: true,
+        currency: true,
+        routeApproved: true,
+        priceApproved: true,
+        userId: true,
+        corporateAccountId: true,
+        user: { select: { name: true, email: true } },
+        guestName: true,
+        guestEmail: true,
+        serviceType: { select: { name: true } },
+        vehicle: { select: { name: true } },
+        assignment: {
+          select: {
+            driverId: true,
+            vehicleUnitId: true,
+            driverPaymentCents: true,
+          },
+        },
+        payment: {
+          select: { status: true, checkoutUrl: true },
+        },
+        corporateAccount: { select: { name: true } },
+        corporatePassenger: { select: { name: true, email: true } },
+        statusEvents: {
+          where: { eventType: "PAYMENT_LINK_SENT" },
+          take: 1,
+          select: { id: true },
+        },
+      },
+    }),
+    db.booking.findMany({
+      where: {
+        status: "PENDING_PAYMENT",
+        pickupAt: { gte: now },
+      },
+      orderBy: [{ pickupAt: "asc" }],
+      take: 100,
+      select: {
+        id: true,
+        status: true,
+        pickupAt: true,
+        pickupAddress: true,
+        dropoffAddress: true,
+        totalCents: true,
+        currency: true,
+        user: { select: { name: true, email: true } },
+        guestName: true,
+        guestEmail: true,
+        serviceType: { select: { name: true } },
+        vehicle: { select: { name: true } },
+        assignment: {
+          select: { driver: { select: { name: true, email: true } } },
+        },
+      },
+    }),
+    db.booking.findMany({
+      where: {
+        pickupAt: { lt: incompleteRidesCutoff },
+        status: {
+          in: ["CONFIRMED", "ASSIGNED", "EN_ROUTE", "ARRIVED", "IN_PROGRESS"],
+        },
+      },
+      orderBy: [{ pickupAt: "asc" }],
+      take: 50,
+      select: {
+        id: true,
+        status: true,
+        pickupAt: true,
+        durationMinutes: true,
+        pickupAddress: true,
+        dropoffAddress: true,
+        totalCents: true,
+        currency: true,
+        user: { select: { name: true, email: true } },
+        guestName: true,
+        guestEmail: true,
+        serviceType: { select: { name: true } },
+        vehicle: { select: { name: true } },
+        assignment: {
+          select: { driver: { select: { name: true } } },
+        },
+      },
+    }),
+  ]);
+  const driversAssignedToday = driversAssignedTodayDistinct.length;
+
+  const setupAlerts = await getBookingWizardSetupAlerts();
+
+  function formatAlertPickup(date: Date, timeZone: string) {
+    return new Intl.DateTimeFormat("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone,
+    }).format(date);
+  }
+
+  // ==========================================
+  // BUILD ALERTS
+  // ==========================================
+  const alerts: AlertItem[] = [];
+
+  // ==========================================
+  // CRITICAL: Unassigned bookings within 24 hours
+  // ==========================================
+  if (unassignedWithin24hCount > 0) {
+    const detailRows = (unassignedSoon as any[]).slice(0, 5).map((b) => {
+      const customerName =
+        b.user?.name?.trim() || b.guestName?.trim() || "Customer";
+      return {
+        id: b.id,
+        href: `/admin/bookings/${b.id}#assign-section`,
+        badge: {
+          label: "Unassigned",
+          tone: "danger" as const,
+        },
+        cells: [
+          {
+            label: "Pickup",
+            value: formatAlertPickup(new Date(b.pickupAt), companyTz),
+          },
+          { label: "Customer", value: customerName },
+          { label: "From", value: shortAddress(b.pickupAddress) },
+          { label: "To", value: shortAddress(b.dropoffAddress) },
+        ],
+      };
+    });
+
+    alerts.push({
+      id: "unassigned-24h",
+      severity: unassignedWithin24hCount >= 3 ? "danger" : "warning",
+      message: `🚨 ${unassignedWithin24hCount} booking(s) need drivers within 24 hours!`,
+      href: "/admin/bookings?status=unassigned",
+      ctaLabel: "View All Unassigned",
+      details:
+        unassignedWithin24hCount > 1
+          ? `These trips need drivers assigned urgently before pickup. Click any row to assign a driver.`
+          : `This trip needs a driver assigned urgently before pickup.`,
+      detailRows,
+      timestamp: "Urgent - Action needed",
+    });
+  }
+
+  // ==========================================
+  // WARNING: All unassigned future bookings (beyond 24h)
+  // ==========================================
+  const unassignedBeyond24h = allUnassignedCount - unassignedWithin24hCount;
+  if (unassignedBeyond24h > 0) {
+    // Filter to only show bookings beyond 24h
+    const beyond24hBookings = (allUnassignedBookings as any[]).filter((b) => {
+      const pickupTime = new Date(b.pickupAt).getTime();
+      return pickupTime >= next24h.getTime();
+    });
+
+    const detailRows = beyond24hBookings.slice(0, 5).map((b) => {
+      const customerName =
+        b.user?.name?.trim() || b.guestName?.trim() || "Customer";
+      const pickupDate = new Date(b.pickupAt);
+      const daysUntil = Math.ceil(
+        (pickupDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+      );
+
+      return {
+        id: b.id,
+        href: `/admin/bookings/${b.id}#assign-section`,
+        badge: {
+          label: `In ${daysUntil}d`,
+          tone: "warning" as const,
+        },
+        cells: [
+          {
+            label: "Pickup",
+            value: formatAlertPickup(pickupDate, companyTz),
+          },
+          { label: "Customer", value: customerName },
+          { label: "Service", value: b.serviceType?.name ?? "—" },
+          { label: "From", value: shortAddress(b.pickupAddress) },
+        ],
+      };
+    });
+
+    alerts.push({
+      id: "unassigned-future",
+      severity: unassignedBeyond24h >= 5 ? "warning" : "info",
+      message: `${unassignedBeyond24h} upcoming booking(s) still need driver assignments`,
+      href: "/admin/bookings?status=unassigned",
+      ctaLabel: "View All Unassigned",
+      details: `These trips are scheduled for more than 24 hours out but still need drivers assigned.`,
+      detailRows,
+      timestamp: "Plan ahead",
+    });
+  }
+
+  // ==========================================
+  // Pending payment within 12 hours
+  // ==========================================
+  if (pendingPaymentWithin12hCount > 0) {
+    const detailRows = (pendingPaymentSoon as any[]).slice(0, 5).map((b) => {
+      const customerName =
+        b.user?.name?.trim() || b.guestName?.trim() || "Customer";
+      return {
+        id: b.id,
+        href: `/admin/bookings/${b.id}#payment-section`,
+        badge: {
+          label: "Unpaid",
+          tone: "warning" as const,
+        },
+        cells: [
+          {
+            label: "Pickup",
+            value: formatAlertPickup(new Date(b.pickupAt), companyTz),
+          },
+          { label: "Customer", value: customerName },
+          { label: "Service", value: b.serviceType?.name ?? "—" },
+          { label: "From", value: shortAddress(b.pickupAddress) },
+        ],
+      };
+    });
+
+    alerts.push({
+      id: "pending-payment-12h",
+      severity: pendingPaymentWithin12hCount >= 2 ? "danger" : "warning",
+      message: `${pendingPaymentWithin12hCount} booking(s) pending payment within 12 hours`,
+      href: "/admin/bookings?status=PENDING_PAYMENT",
+      ctaLabel: "View All Pending",
+      details: `These customers haven't completed payment yet. Click any row to send a reminder.`,
+      detailRows,
+      timestamp: "Payment overdue",
+    });
+  }
+
+  // ==========================================
+  // Stuck in review (older than 2 hours)
+  // ==========================================
+  if (stuckReview.length > 0) {
+    const detailRows = (stuckReview as any[]).slice(0, 5).map((b) => {
+      const customerName =
+        b.user?.name?.trim() || b.guestName?.trim() || "Customer";
+      const hoursAgo = Math.round(
+        (now.getTime() - new Date(b.createdAt).getTime()) / (1000 * 60 * 60),
+      );
+      return {
+        id: b.id,
+        href: `/admin/bookings/${b.id}`,
+        badge: {
+          label: `${hoursAgo}h+ waiting`,
+          tone: "warning" as const,
+        },
+        cells: [
+          {
+            label: "Pickup",
+            value: formatAlertPickup(new Date(b.pickupAt), companyTz),
+          },
+          { label: "Customer", value: customerName },
+          { label: "From", value: shortAddress(b.pickupAddress) },
+          { label: "To", value: shortAddress(b.dropoffAddress) },
+        ],
+      };
+    });
+
+    alerts.push({
+      id: "stuck-review",
+      severity: stuckReview.length >= 3 ? "danger" : "warning",
+      message: `${stuckReview.length} booking(s) stuck in review for over 2 hours`,
+      href: "/admin/bookings?status=PENDING_REVIEW",
+      ctaLabel: "View All Pending Review",
+      details: `These requests have been waiting for approval. Click any row to review.`,
+      detailRows,
+      timestamp: "Needs attention",
+    });
+  }
+
+  // ==========================================
+  // New verified users (last 24 hours)
+  // This alert automatically disappears after 24 hours from verification
+  // ==========================================
+  if (newVerifiedUsersCount > 0) {
+    const newVerifiedUsersRows = await db.user.findMany({
+      where: {
+        emailVerified: { not: null, gte: verifiedCutoff },
+        createdAt: { gte: verifiedCutoff },
+      },
+      orderBy: [{ emailVerified: "desc" }],
+      take: 5,
+      select: { id: true, name: true, email: true, emailVerified: true },
+    });
+
+    alerts.push({
+      id: "new-verified-users",
+      severity: "info",
+      message: `${newVerifiedUsersCount} new verified user(s) in the last 24 hours`,
+      href: "/admin/users",
+      ctaLabel: "View All Users",
+      details: `These customers have verified their email and can now book rides.`,
+      timestamp: "Last 24 hours",
+      detailRows: newVerifiedUsersRows.map((u) => ({
+        id: u.id,
+        href: `/admin/users/${u.id}`,
+        badge: {
+          label: "Verified",
+          tone: "good" as const,
+        },
+        cells: [
+          { label: "Name", value: u.name?.trim() || "—" },
+          { label: "Email", value: u.email },
+          {
+            label: "Verified at",
+            value: formatAlertPickup(new Date(u.emailVerified!), companyTz),
+          },
+        ],
+      })),
+    });
+  }
+
+  // Add setup alerts at the beginning
+  alerts.unshift(...setupAlerts);
+
+  // ==========================================
+  // TRANSFORM DATA
+  // ==========================================
+
+  const recentBookingRequests: RecentBookingRequestItem[] =
+    recentBookingRequestsRaw.map((b: any) => {
+      const isCorporate = Boolean(b.corporateAccountId);
+      const isAccount = Boolean(b.userId);
+
+      let customer: RecentBookingRequestItem["customer"];
+
+      if (isCorporate) {
+        customer = {
+          kind: "corporate",
+          name:
+            (b.corporatePassenger?.name ?? "").trim() || "Corporate passenger",
+          email: b.corporatePassenger?.email ?? null,
+          accountName: b.corporateAccount?.name ?? "Corporate",
+        };
+      } else if (isAccount) {
+        customer = {
+          kind: "account",
+          name: (b.user?.name ?? "").trim() || b.user?.email || "Account",
+          email: b.user?.email ?? null,
+          verified: Boolean(b.user?.emailVerified),
+        };
+      } else {
+        customer = {
+          kind: "guest",
+          name: (b.guestName ?? "").trim() || "Guest",
+          email: b.guestEmail ?? null,
+          phone: b.guestPhone ?? null,
+        };
+      }
+
+      return {
+        id: b.id,
+        status: b.status,
+        createdAtIso: new Date(b.createdAt).toISOString(),
+        pickupAtIso: new Date(b.pickupAt).toISOString(),
+        pickupAddress: b.pickupAddress,
+        dropoffAddress: b.dropoffAddress,
+        serviceName: b.serviceType?.name ?? "—",
+        vehicleName: b.vehicle?.name ?? null,
+        airportLeg: (b.serviceType?.airportLeg ?? "NONE") as any,
+        specialRequests: b.specialRequests ?? null,
+        customer,
+      };
+    });
+
+  const incompleteApprovals: IncompleteApprovalItem[] = (
+    incompleteApprovalsRaw as any[]
+  ).map((b) => {
+    const isCorporate = Boolean(b.corporateAccountId);
+    const isPaid = b.payment?.status === "PAID";
+    const hasPaymentLink =
+      Boolean(b.payment?.checkoutUrl) || (b.statusEvents?.length ?? 0) > 0;
+
+    return {
+      id: b.id,
+      status: b.status,
+      createdAtIso: new Date(b.createdAt).toISOString(),
+      pickupAtIso: new Date(b.pickupAt).toISOString(),
+      pickupAddress: b.pickupAddress,
+      dropoffAddress: b.dropoffAddress,
+      serviceName: b.serviceType?.name ?? "—",
+      vehicleName: b.vehicle?.name ?? null,
+      totalCents: b.totalCents ?? 0,
+      currency: b.currency ?? "usd",
+      customer: isCorporate
+        ? {
+            name: b.corporatePassenger?.name?.trim() || "Corporate passenger",
+            email: b.corporatePassenger?.email ?? null,
+            kind: "corporate" as const,
+            accountName: b.corporateAccount?.name ?? "Corporate",
+          }
+        : b.userId
+          ? {
+              name: (b.user?.name ?? "").trim() || b.user?.email || "Account",
+              email: b.user?.email ?? null,
+              kind: "account" as const,
+            }
+          : {
+              name: (b.guestName ?? "").trim() || "Guest",
+              email: b.guestEmail ?? null,
+              kind: "guest" as const,
+            },
+      approvals: {
+        routeApproved: Boolean(b.routeApproved),
+        priceApproved: Boolean(b.priceApproved),
+        hasDriver: Boolean(b.assignment?.driverId),
+        hasVehicleUnit: Boolean(b.assignment?.vehicleUnitId),
+        hasDriverPay: Boolean(
+          b.assignment?.driverPaymentCents &&
+          b.assignment.driverPaymentCents > 0,
+        ),
+        isPaid,
+        hasPaymentLink,
+        isCorporate,
+      },
+    };
+  });
+
+  // Transform upcoming rides data
+  const upcomingRides: UpcomingRideItem[] = upcomingRidesRaw.map((b: any) => {
+    const customerName =
+      b.user?.name?.trim() || b.guestName?.trim() || "Customer";
+    const customerEmail = b.user?.email || b.guestEmail || null;
+    const driverName = b.assignment?.driver?.name?.trim() || null;
+
+    return {
+      id: b.id,
+      status: b.status,
+      pickupAtIso: new Date(b.pickupAt).toISOString(),
+      pickupAddress: b.pickupAddress,
+      dropoffAddress: b.dropoffAddress,
+      serviceName: b.serviceType?.name ?? "—",
+      vehicleName: b.vehicle?.name ?? null,
+      driverName,
+      totalCents: b.totalCents ?? 0,
+      currency: b.currency ?? "usd",
+      customer: {
+        name: customerName,
+        email: customerEmail,
+        phone: b.user?.phone ?? b.guestPhone ?? null,
+      },
+    };
+  });
+
+  // Transform payment data
+  const paymentsToday: PaymentItem[] = (paymentsReceivedTodayRaw as any[]).map(
+    (p) => transformPayment(p),
+  );
+  const paymentsThisWeek: PaymentItem[] = (
+    paymentsReceivedWeekRaw as any[]
+  ).map((p) => transformPayment(p));
+  const paymentLinksToday: PaymentItem[] = (paymentLinksTodayRaw as any[]).map(
+    (p) => transformPayment(p, true),
+  );
+  const paymentLinksThisWeek: PaymentItem[] = (
+    paymentLinksWeekRaw as any[]
+  ).map((p) => transformPayment(p, true));
+
+  const assignedActiveUnitIdsToday = new Set(
+    (assignedActiveUnitsToday as any[]).map((u) => u.id),
+  );
+  const availableUnitsToday = Math.max(
+    0,
+    activeUnits - assignedActiveUnitIdsToday.size,
+  );
+
+  const assignedByCategory = new Map<string, number>();
+  for (const u of assignedActiveUnitsToday as any[]) {
+    const key = u.categoryId ?? "unassigned";
+    assignedByCategory.set(key, (assignedByCategory.get(key) ?? 0) + 1);
+  }
+
+  const categoryIds = (activeUnitsByCategory as any[])
+    .map((g) => g.categoryId)
+    .filter((x): x is string => typeof x === "string");
+
+  const categoryRows = categoryIds.length
+    ? await db.vehicle.findMany({
+        where: { id: { in: categoryIds } },
+        select: { id: true, name: true },
+      })
+    : [];
+
+  const categoryNameById = new Map(categoryRows.map((c) => [c.id, c.name]));
+
+  const byCategory: VehicleCategoryReadiness[] = (
+    activeUnitsByCategory as any[]
+  )
+    .map((g) => {
+      const key = g.categoryId ?? "unassigned";
+      const activeCount = g._count._all;
+      const assignedCount = assignedByCategory.get(key) ?? 0;
+      const name =
+        g.categoryId == null
+          ? "Unassigned"
+          : (categoryNameById.get(g.categoryId) ?? "Unknown");
+
+      return {
+        id: key,
+        name,
+        activeUnits: activeCount,
+        availableToday: Math.max(0, activeCount - assignedCount),
+      };
+    })
+    .sort((a, b) => b.activeUnits - a.activeUnits)
+    .slice(0, 8);
+
+  const activity: AdminActivityItem[] = [];
+
+  for (const e of recentStatusEvents as any[]) {
+    const cust = customerLabel(e.booking?.user);
+    const by = actorLabel(e.createdBy);
+    const route = `${shortAddress(e.booking.pickupAddress)} → ${shortAddress(e.booking.dropoffAddress)}`;
+
+    let title = `Booking status updated: ${statusLabel(e.status)}`;
+    if (e.status === "PENDING_PAYMENT")
+      title = "Booking approved (pending payment)";
+    if (e.status === "CONFIRMED") title = "Booking confirmed";
+    if (e.status === "CANCELLED") title = "Booking cancelled";
+
+    activity.push({
+      kind: "STATUS",
+      at: e.createdAt,
+      title,
+      subtitle: `${cust} • ${route} • by ${by}`,
+      bookingId: e.booking.id,
+    });
+  }
+
+  for (const a of recentAssignments as any[]) {
+    const cust = customerLabel(a.booking?.user);
+    const by = actorLabel(a.assignedBy);
+    const driver = actorLabel(a.driver);
+    const unitName = a.vehicleUnit?.name
+      ? ` • Unit: ${a.vehicleUnit.name}`
+      : "";
+    const route = `${shortAddress(a.booking.pickupAddress)} → ${shortAddress(a.booking.dropoffAddress)}`;
+
+    activity.push({
+      kind: "ASSIGNMENT",
+      at: a.assignedAt,
+      title: "Driver assigned",
+      subtitle: `${cust} • ${route} • Driver: ${driver}${unitName} • by ${by}`,
+      bookingId: a.booking.id,
+    });
+  }
+
+  for (const p of recentPaymentsReceived as any[]) {
+    const cust = customerLabel(p.booking?.user);
+    const route = `${shortAddress(p.booking.pickupAddress)} → ${shortAddress(p.booking.dropoffAddress)}`;
+
+    activity.push({
+      kind: "PAYMENT_RECEIVED",
+      at: p.paidAt ?? new Date(),
+      title: "Payment received",
+      subtitle: `${cust} • ${route}`,
+      bookingId: p.booking.id,
+    });
+  }
+
+  for (const pl of recentPaymentLinks as any[]) {
+    const cust = customerLabel(pl.booking?.user);
+    const route = `${shortAddress(pl.booking.pickupAddress)} → ${shortAddress(pl.booking.dropoffAddress)}`;
+
+    activity.push({
+      kind: "PAYMENT_LINK_SENT",
+      at: pl.updatedAt,
+      title: "Payment link sent",
+      subtitle: `${cust} • ${route}`,
+      bookingId: pl.booking.id,
+    });
+  }
+
+  const activityTop10 = activity
+    .sort((a, b) => b.at.getTime() - a.at.getTime())
+    .slice(0, 5);
+
+  /**
+   * FINANCE SNAPSHOT DATA
+   */
+  const monthLabel = tz.formatMonthLabel(now, companyTz);
+  const [
+    capturedThisMonth,
+    capturedToday,
+    capturedPrevMonth,
+    refundsThisMonth,
+    refundsPrevMonth,
+    pendingEstimate,
+  ] = await Promise.all([
+    safeCapturedAgg({ from: monthStart, to: nextMonthStart }),
+    safeCapturedAgg({ from: todayStart, to: tomorrowStart }),
+    safeCapturedAgg({ from: prevMonthStart, to: monthStart }),
+    safeRefundAgg({ from: monthStart, to: nextMonthStart }),
+    safeRefundAgg({ from: prevMonthStart, to: monthStart }),
+    safePendingPaymentEstimate(),
+  ]);
+
+  const netMonthCents = Math.max(
+    0,
+    capturedThisMonth.sumCents - refundsThisMonth.sumCents,
+  );
+  const netPrevCents = Math.max(
+    0,
+    capturedPrevMonth.sumCents - refundsPrevMonth.sumCents,
+  );
+
+  const monthOverMonthPct =
+    netPrevCents > 0
+      ? ((netMonthCents - netPrevCents) / netPrevCents) * 100
+      : null;
+
+  const snap = await getAdminFinanceSnapshot(now);
+
+  // Transform today's rides data
+  const todaysRides = (todaysRidesRaw as any[]).map((b) => {
+    const customerName =
+      b.user?.name?.trim() || b.guestName?.trim() || "Customer";
+    const customerEmail = b.user?.email || b.guestEmail || null;
+    const customerPhone = b.user?.phone || b.guestPhone || null;
+    const driverName = b.assignment?.driver?.name?.trim() || null;
+
+    return {
+      id: b.id,
+      status: b.status,
+      pickupAtIso: new Date(b.pickupAt).toISOString(),
+      pickupAddress: b.pickupAddress,
+      dropoffAddress: b.dropoffAddress,
+      serviceName: b.serviceType?.name ?? "—",
+      vehicleName: b.vehicle?.name ?? null,
+      driverName,
+      totalCents: b.totalCents ?? 0,
+      currency: b.currency ?? "usd",
+      customer: {
+        name: customerName,
+        email: customerEmail,
+        phone: customerPhone,
+      },
+    };
+  });
+
+  // Transform calendar data
+  const countsByYmd: Record<string, number> = {};
+  for (const r of calendarRidesRaw) {
+    const key = tz.formatIsoDate(r.pickupAt, companyTz);
+    countsByYmd[key] = (countsByYmd[key] ?? 0) + 1;
+  }
+
+  const blackoutsByYmd: Record<string, boolean> = {};
+  for (const b of calendarBlackoutsRaw) {
+    blackoutsByYmd[b.ymd] = true;
+  }
+
+  // Filter to only bookings where totalCents > amountPaidCents
+  const bookingsWithBalanceDue = (balanceDueBookingsRaw as any[]).filter(
+    (b) => {
+      const paidCents = b.payment?.amountPaidCents ?? 0;
+      const totalCents = b.totalCents ?? 0;
+      return paidCents > 0 && totalCents > paidCents;
+    },
+  );
+
+  // --- Build outstanding balance items for AdminOutstandingBalances ---
+  const unpaidItems: OutstandingBalanceItem[] = (
+    pendingPaymentBookingsRaw as any[]
+  ).map((b) => ({
+    id: b.id,
+    status: b.status,
+    pickupAtIso: new Date(b.pickupAt).toISOString(),
+    pickupAddress: b.pickupAddress,
+    dropoffAddress: b.dropoffAddress,
+    serviceName: b.serviceType?.name ?? "—",
+    vehicleName: b.vehicle?.name ?? null,
+    driverName: b.assignment?.driver?.name?.trim() ?? null,
+    totalCents: b.totalCents ?? 0,
+    paidCents: 0,
+    outstandingCents: b.totalCents ?? 0,
+    currency: b.currency ?? "usd",
+    balanceType: "unpaid" as const,
+    customer: {
+      name: b.user?.name?.trim() || b.guestName?.trim() || "Customer",
+      email: b.user?.email || b.guestEmail || null,
+    },
+  }));
+
+  const partialItems: OutstandingBalanceItem[] = bookingsWithBalanceDue.map(
+    (b: any) => {
+      const paidCents = b.payment?.amountPaidCents ?? 0;
+      const totalCents = b.totalCents ?? 0;
+      return {
+        id: b.id,
+        status: b.status,
+        pickupAtIso: new Date(b.pickupAt).toISOString(),
+        pickupAddress: b.pickupAddress,
+        dropoffAddress: b.dropoffAddress,
+        serviceName: b.serviceType?.name ?? "—",
+        vehicleName: b.vehicle?.name ?? null,
+        driverName: null,
+        totalCents,
+        paidCents,
+        outstandingCents: totalCents - paidCents,
+        currency: b.currency ?? "usd",
+        balanceType: "partial" as const,
+        customer: {
+          name: b.user?.name?.trim() || b.guestName?.trim() || "Customer",
+          email: b.user?.email || b.guestEmail || null,
+        },
+      };
+    },
+  );
+
+  const outstandingBalanceItems: OutstandingBalanceItem[] = [
+    ...unpaidItems,
+    ...partialItems,
+  ].sort(
+    (a, b) =>
+      new Date(a.pickupAtIso).getTime() - new Date(b.pickupAtIso).getTime(),
+  );
+
+  // ==========================================
+  // WARNING: Bookings with balance due
+  // ==========================================
+  if (bookingsWithBalanceDue.length > 0) {
+    const totalBalanceDueCents = bookingsWithBalanceDue.reduce((sum, b) => {
+      const paidCents = b.payment?.amountPaidCents ?? 0;
+      const totalCents = b.totalCents ?? 0;
+      return sum + (totalCents - paidCents);
+    }, 0);
+
+    const detailRows = bookingsWithBalanceDue.slice(0, 5).map((b) => {
+      const customerName =
+        b.user?.name?.trim() || b.guestName?.trim() || "Customer";
+      const paidCents = b.payment?.amountPaidCents ?? 0;
+      const totalCents = b.totalCents ?? 0;
+      const balanceCents = totalCents - paidCents;
+
+      return {
+        id: b.id,
+        href: `/admin/bookings/${b.id}#payment-section`,
+        badge: {
+          label: `$${(balanceCents / 100).toFixed(2)} due`,
+          tone: "warning" as const,
+        },
+        cells: [
+          {
+            label: "Pickup",
+            value: formatAlertPickup(new Date(b.pickupAt), companyTz),
+          },
+          { label: "Customer", value: customerName },
+          {
+            label: "Paid",
+            value: `$${(paidCents / 100).toFixed(2)}`,
+          },
+          {
+            label: "Total",
+            value: `$${(totalCents / 100).toFixed(2)}`,
+            highlight: true,
+          },
+        ],
+      };
+    });
+
+    alerts.push({
+      id: "balance-due",
+      severity: bookingsWithBalanceDue.length >= 3 ? "danger" : "warning",
+      message: `💳 ${bookingsWithBalanceDue.length} booking(s) have a balance due ($${(totalBalanceDueCents / 100).toFixed(2)} total)`,
+      href: "/admin/bookings?filter=balance-due",
+      ctaLabel: "View All",
+      details: `These bookings have been partially paid but the price was increased. Send a balance payment link to collect the remaining amount.`,
+      detailRows,
+      timestamp: "Payment required",
+    });
+  }
+
+  // ==========================================
+  // WARNING: Trips starting soon with unpaid balance
+  // ==========================================
+  const upcomingTripsWithBalance = (unpaidUpcomingTripsRaw as any[]).filter(
+    (b) => {
+      const paidCents = b.payment?.amountPaidCents ?? 0;
+      const totalCents = b.totalCents ?? 0;
+      return paidCents > 0 && totalCents > paidCents;
+    },
+  );
+
+  if (upcomingTripsWithBalance.length > 0) {
+    const totalBalanceCents = upcomingTripsWithBalance.reduce((sum, b) => {
+      const paidCents = b.payment?.amountPaidCents ?? 0;
+      const totalCents = b.totalCents ?? 0;
+      return sum + (totalCents - paidCents);
+    }, 0);
+
+    const detailRows = upcomingTripsWithBalance.slice(0, 5).map((b) => {
+      const customerName =
+        b.user?.name?.trim() || b.guestName?.trim() || "Customer";
+      const paidCents = b.payment?.amountPaidCents ?? 0;
+      const totalCents = b.totalCents ?? 0;
+      const balanceCents = totalCents - paidCents;
+
+      return {
+        id: b.id,
+        href: `/admin/bookings/${b.id}#payment-section`,
+        badge: {
+          label: `$${(balanceCents / 100).toFixed(2)} due`,
+          tone: "danger" as const,
+        },
+        cells: [
+          {
+            label: "Pickup",
+            value: formatAlertPickup(new Date(b.pickupAt), companyTz),
+          },
+          { label: "Customer", value: customerName },
+          { label: "Service", value: b.serviceType?.name ?? "—" },
+          {
+            label: "Balance",
+            value: `$${(balanceCents / 100).toFixed(2)}`,
+            highlight: true,
+          },
+        ],
+      };
+    });
+
+    alerts.push({
+      id: "upcoming-unpaid-balance",
+      severity: "danger",
+      message: `⚠️ ${upcomingTripsWithBalance.length} trip(s) starting within 24h have unpaid balance ($${(totalBalanceCents / 100).toFixed(2)})`,
+      href: "/admin/bookings?filter=balance-due",
+      ctaLabel: "View All",
+      details: `These trips are starting soon but have an outstanding balance. Collect payment before pickup or the driver may need to collect on-site.`,
+      detailRows,
+      timestamp: "Urgent - Payment needed",
+    });
+  }
+
+  // ==========================================
+  // WARNING: Driver has overlapping assignments
+  // ==========================================
+  const BUFFER_MINUTES = 30; // Buffer time between trips
+
+  type DriverAssignmentData = {
+    driverName: string;
+    driverEmail: string;
+    assignments: {
+      bookingId: string;
+      pickupAt: Date;
+      endAt: Date;
+      pickupAddress: string;
+      dropoffAddress: string;
+      customerName: string;
+      serviceName: string;
+    }[];
+  };
+
+  const assignmentsByDriver = new Map<string, DriverAssignmentData>();
+
+  for (const a of upcomingAssignmentsForOverlapCheck as any[]) {
+    // Skip if booking doesn't exist
+    if (!a.booking) continue;
+
+    const driverId = a.driverId;
+    const pickupAt = new Date(a.booking.pickupAt);
+    const durationMinutes = a.booking.durationMinutes ?? 60; // Default 1 hour if not set
+    const endAt = new Date(
+      pickupAt.getTime() + (durationMinutes + BUFFER_MINUTES) * 60 * 1000,
+    );
+
+    const customerName =
+      a.booking.user?.name?.trim() || a.booking.guestName?.trim() || "Customer";
+
+    if (!assignmentsByDriver.has(driverId)) {
+      assignmentsByDriver.set(driverId, {
+        driverName: a.driver?.name?.trim() || "Driver",
+        driverEmail: a.driver?.email || "",
+        assignments: [],
+      });
+    }
+
+    assignmentsByDriver.get(driverId)!.assignments.push({
+      bookingId: a.booking.id,
+      pickupAt,
+      endAt,
+      pickupAddress: a.booking.pickupAddress,
+      dropoffAddress: a.booking.dropoffAddress,
+      customerName,
+      serviceName: a.booking.serviceType?.name ?? "—",
+    });
+  }
+
+  // Find overlapping assignments
+  type OverlapInfo = {
+    driverId: string;
+    driverName: string;
+    booking1: {
+      id: string;
+      pickupAt: Date;
+      customerName: string;
+      serviceName: string;
+    };
+    booking2: {
+      id: string;
+      pickupAt: Date;
+      customerName: string;
+      serviceName: string;
+    };
+  };
+
+  const overlaps: OverlapInfo[] = [];
+
+  for (const [driverId, data] of assignmentsByDriver) {
+    const sorted = data.assignments.sort(
+      (a, b) => a.pickupAt.getTime() - b.pickupAt.getTime(),
+    );
+
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const current = sorted[i];
+      const next = sorted[i + 1];
+
+      // Check if current trip's end time overlaps with next trip's start
+      if (current.endAt > next.pickupAt) {
+        overlaps.push({
+          driverId,
+          driverName: data.driverName,
+          booking1: {
+            id: current.bookingId,
+            pickupAt: current.pickupAt,
+            customerName: current.customerName,
+            serviceName: current.serviceName,
+          },
+          booking2: {
+            id: next.bookingId,
+            pickupAt: next.pickupAt,
+            customerName: next.customerName,
+            serviceName: next.serviceName,
+          },
+        });
+      }
+    }
+  }
+
+  if (overlaps.length > 0) {
+    const detailRows = overlaps.slice(0, 5).map((o, idx) => {
+      const time1 = formatAlertPickup(o.booking1.pickupAt, companyTz);
+      const time2 = formatAlertPickup(o.booking2.pickupAt, companyTz);
+
+      return {
+        id: `overlap-${idx}`,
+        href: `/admin/bookings/${o.booking1.id}#assign-section`,
+        badge: {
+          label: "Overlap",
+          tone: "danger" as const,
+        },
+        cells: [
+          { label: "Driver", value: o.driverName },
+          { label: "Trip 1", value: `${time1}` },
+          { label: "Trip 2", value: `${time2}` },
+          {
+            label: "Action",
+            value: "Reassign needed",
+            highlight: true,
+          },
+        ],
+      };
+    });
+
+    alerts.push({
+      id: "driver-overlaps",
+      severity: "danger",
+      message: `🚗 ${overlaps.length} driver assignment conflict(s) detected`,
+      href: "/admin/bookings?status=CONFIRMED",
+      ctaLabel: "View Bookings",
+      details: `These drivers have overlapping trip assignments. Either reassign one of the trips to a different driver, or adjust the pickup times. Buffer time between trips: ${BUFFER_MINUTES} minutes.`,
+      detailRows,
+      timestamp: "Scheduling conflict",
+    });
+  }
+
+  // ==========================================
+  // INFO: Pending corporate inquiries
+  // ==========================================
+  if (pendingCorporateInquiries > 0) {
+    alerts.push({
+      id: "pending-corporate-inquiries",
+      severity: pendingCorporateInquiries >= 3 ? "warning" : "info",
+      message: `🏢 ${pendingCorporateInquiries} new corporate account inquiry(ies) awaiting review`,
+      href: "/admin/corporate/inquiries",
+      ctaLabel: "Review Inquiries",
+      details:
+        pendingCorporateInquiries > 1
+          ? `${pendingCorporateInquiries} companies have submitted corporate account inquiries. Review and reach out to discuss their needs.`
+          : `A company has submitted a corporate account inquiry. Review and reach out to discuss their needs.`,
+      timestamp: "Action needed",
+    });
+  }
+
+  // ==========================================
+  // INFO: Tips received in last 24 hours
+  // ==========================================
+  const recentTips = (recentTipsRaw as any[]).filter(
+    (p) => p.booking && (p.tipCents ?? 0) > 0,
+  );
+
+  if (recentTips.length > 0) {
+    const totalTipCents = recentTips.reduce(
+      (sum, p) => sum + (p.tipCents ?? 0),
+      0,
+    );
+
+    const detailRows = recentTips.slice(0, 5).map((p) => {
+      const b = p.booking;
+      const customerName =
+        b.user?.name?.trim() || b.guestName?.trim() || "Customer";
+      const driverName = b.assignment?.driver?.name?.trim() || "Unassigned";
+
+      return {
+        id: p.id,
+        href: `/admin/bookings/${b.id}#payment-section`,
+        badge: {
+          label: `$${(p.tipCents / 100).toFixed(2)} tip`,
+          tone: "good" as const,
+        },
+        cells: [
+          {
+            label: "Paid at",
+            value: formatAlertPickup(new Date(p.paidAt), companyTz),
+          },
+          { label: "Customer", value: customerName },
+          { label: "Driver", value: driverName },
+          { label: "Service", value: b.serviceType?.name ?? "—" },
+        ],
+      };
+    });
+
+    alerts.push({
+      id: "recent-tips",
+      severity: "info",
+      message: `💰 ${recentTips.length} tip${recentTips.length > 1 ? "s" : ""} received in the last 24 hours ($${(totalTipCents / 100).toFixed(2)} total)`,
+      href: "/admin/bookings",
+      ctaLabel: "View Bookings",
+      details: `These customers left tips during checkout. Make sure to pass the tip amount to the assigned driver.`,
+      detailRows,
+      timestamp: "Last 24 hours",
+    });
+  }
+
+  const incompleteRides: IncompleteRideItem[] = (incompleteRidesRaw as any[])
+    .filter((b) => {
+      const pickupAt = new Date(b.pickupAt).getTime();
+      const duration = (b.durationMinutes ?? 60) * 60 * 1000;
+      const expectedEnd = pickupAt + duration;
+      const cutoff = expectedEnd + 3 * 60 * 60 * 1000;
+      return now.getTime() > cutoff;
+    })
+    .map((b) => ({
+      id: b.id,
+      status: b.status,
+      pickupAtIso: new Date(b.pickupAt).toISOString(),
+      durationMinutes: b.durationMinutes ?? null,
+      pickupAddress: b.pickupAddress,
+      dropoffAddress: b.dropoffAddress,
+      serviceName: b.serviceType?.name ?? "—",
+      vehicleName: b.vehicle?.name ?? null,
+      driverName: b.assignment?.driver?.name?.trim() ?? null,
+      totalCents: b.totalCents ?? 0,
+      currency: b.currency ?? "usd",
+      customer: {
+        name:
+          (b.user?.name ?? "").trim() ||
+          (b.guestName ?? "").trim() ||
+          "Customer",
+        email: b.user?.email || b.guestEmail || null,
+      },
+    }));
+
+  // ==========================================
+  // AD-HOC INVOICES (dashboard tab)
+  // ==========================================
+  const invoicesRaw = await db.invoice.findMany({
+    where: { status: { not: "VOID" } },
+    orderBy: [{ createdAt: "desc" }],
+    take: 100,
+    select: {
+      id: true,
+      invoiceNumber: true,
+      status: true,
+      totalCents: true,
+      amountPaidCents: true,
+      currency: true,
+      createdAt: true,
+      sentAt: true,
+      dueDate: true,
+      paidAt: true,
+      userId: true,
+      user: { select: { name: true, email: true } },
+      guestName: true,
+      guestEmail: true,
+    },
+  });
+
+  const invoiceItems: AdminInvoiceItem[] = (invoicesRaw as any[]).map((inv) => ({
+    id: inv.id,
+    invoiceNumber: inv.invoiceNumber,
+    status: inv.status,
+    totalCents: inv.totalCents ?? 0,
+    amountPaidCents: inv.amountPaidCents ?? 0,
+    balanceDueCents: Math.max(
+      0,
+      (inv.totalCents ?? 0) - (inv.amountPaidCents ?? 0),
+    ),
+    currency: inv.currency ?? "usd",
+    customerName:
+      inv.user?.name?.trim() ||
+      inv.guestName?.trim() ||
+      inv.user?.email ||
+      inv.guestEmail ||
+      "Customer",
+    customerEmail: inv.user?.email || inv.guestEmail || null,
+    isGuest: !inv.userId,
+    createdAtIso: new Date(inv.createdAt).toISOString(),
+    sentAtIso: inv.sentAt ? new Date(inv.sentAt).toISOString() : null,
+    dueDateIso: inv.dueDate ? new Date(inv.dueDate).toISOString() : null,
+    paidAtIso: inv.paidAt ? new Date(inv.paidAt).toISOString() : null,
+  }));
+
+  const outstandingInvoiceCount = invoiceItems.filter(
+    (x) => x.status === "SENT" || x.status === "PARTIALLY_PAID",
+  ).length;
+
+  return (
+    <section className={styles.content}>
+      <AdminPageIntro
+        pendingReview={pendingReview}
+        pendingPayment={pendingPayment}
+        confirmed={confirmed}
+      />
+      <AdminFinanceSnapshot {...snap} currency='USD' />
+      {/* <AdminRecentBookingRequests
+        items={recentBookingRequests}
+        timeZone={companyTz}
+        bookingHrefBase='/admin/bookings'
+      />
+      <AdminIncompleteRides
+        items={incompleteRides}
+        timeZone={companyTz}
+        bookingHrefBase='/admin/bookings'
+      />
+      <AdminAlerts alerts={alerts} />
+      <AdminIncompleteApprovals
+        items={incompleteApprovals}
+        timeZone={companyTz}
+        bookingHrefBase='/admin/bookings'
+      />
+      <AdminPaymentsSnapshot
+        paymentsToday={paymentsToday}
+        paymentsThisWeek={paymentsThisWeek}
+        paymentLinksToday={paymentLinksToday}
+        paymentLinksThisWeek={paymentLinksThisWeek}
+        timeZone={companyTz}
+        bookingHrefBase='/admin/bookings'
+      />
+      <AdminOutstandingBalances
+        items={outstandingBalanceItems}
+        timeZone={companyTz}
+        bookingHrefBase='/admin/bookings'
+      /> */}
+      {/* <div className={styles.graphCalendarContainer}>
+        <AdminQuickActions />
+      </div> */}
+
+      <AdminDashboardTabs
+        // ── Counts for tab badges ──
+        // Booking requests: only pending review items are truly actionable
+        countBookingRequests={
+          recentBookingRequests.filter((x) => x.status === "PENDING_REVIEW")
+            .length
+        }
+        // Incomplete rides: whatever survived the JS filter in the transform
+        countIncompleteRides={incompleteRides.length}
+        // Alerts: total number of alert items
+        countAlerts={alerts.length}
+        // Incomplete approvals: all items needing attention
+        countIncompleteApprovals={incompleteApprovals.length}
+        // Payments: today's received payments (activity indicator)
+        countPaymentsReceived={paymentsToday.length}
+        // Outstanding balances: total unpaid/partial items
+        countOutstandingBalances={outstandingBalanceItems.length}
+        countInvoices={outstandingInvoiceCount}
+        // ── Panel content — server components passed as ReactNode slots ──
+        bookingRequests={
+          <AdminRecentBookingRequests
+            items={recentBookingRequests}
+            timeZone={companyTz}
+            bookingHrefBase='/admin/bookings'
+          />
+        }
+        incompleteRides={
+          <AdminIncompleteRides
+            items={incompleteRides}
+            timeZone={companyTz}
+            bookingHrefBase='/admin/bookings'
+          />
+        }
+        alerts={<AdminAlerts alerts={alerts} />}
+        incompleteApprovals={
+          <AdminIncompleteApprovals
+            items={incompleteApprovals}
+            timeZone={companyTz}
+            bookingHrefBase='/admin/bookings'
+          />
+        }
+        paymentsReceived={
+          <AdminPaymentsSnapshot
+            paymentsToday={paymentsToday}
+            paymentsThisWeek={paymentsThisWeek}
+            paymentLinksToday={paymentLinksToday}
+            paymentLinksThisWeek={paymentLinksThisWeek}
+            timeZone={companyTz}
+            bookingHrefBase='/admin/bookings'
+          />
+        }
+        outstandingBalances={
+          <AdminOutstandingBalances
+            items={outstandingBalanceItems}
+            timeZone={companyTz}
+            bookingHrefBase='/admin/bookings'
+          />
+        }
+        invoices={
+          <AdminInvoicesSnapshot
+            items={invoiceItems}
+            timeZone={companyTz}
+            invoiceHrefBase='/admin/invoices'
+          />
+        }
+      />
+
+      <AdminTodaysRides
+        items={todaysRides}
+        timeZone={companyTz}
+        bookingHrefBase='/admin/bookings'
+      />
+      <AdminUpcomingRides
+        items={upcomingRides}
+        timeZone={companyTz}
+        bookingHrefBase='/admin/bookings'
+      />
+
+      <AdminRideCalendar
+        initialMonth={tz.monthKey(baseMonth, companyTz)}
+        countsByYmd={countsByYmd}
+        blackoutsByYmd={blackoutsByYmd}
+        todayYmd={tz.formatIsoDate(now, companyTz)}
+        timeZone={companyTz}
+      />
+      <AdminDriverSnapshot />
+
+      <AdminScheduleSnapshot
+        today={{
+          total: todayTotal,
+          confirmed: todayConfirmed,
+          unassigned: todayUnassigned,
+        }}
+        tomorrow={{
+          total: tomorrowTotal,
+          confirmed: tomorrowConfirmed,
+          unassigned: tomorrowUnassigned,
+        }}
+        earliestUpcomingPickupAt={earliestUpcoming?.pickupAt ?? null}
+        tripsNext3Hours={tripsNext3Hours}
+        timeZone={companyTz}
+      />
+
+      <AdminVehicleSnapshot
+        activeUnits={activeUnits}
+        availableUnitsToday={availableUnitsToday}
+        inactiveUnits={inactiveUnits}
+        byCategory={byCategory}
+      />
+      <AdminActivityFeed items={activityTop10} timeZone={companyTz} />
+    </section>
+  );
+}

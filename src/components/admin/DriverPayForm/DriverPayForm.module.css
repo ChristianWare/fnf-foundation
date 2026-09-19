@@ -1,0 +1,672 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* =============================================================================
+   No Driver Message
+   ============================================================================= */
+
+.noDriverMessage {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 2rem;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+}
+
+.noDriverIcon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.noDriverText {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.noDriverText strong {
+  font-size: 1.4rem;
+  color: var(--black);
+}
+
+.noDriverText p {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--paragraph);
+  opacity: 0.8;
+}
+
+/* =============================================================================
+   Driver Payment Section
+   ============================================================================= */
+
+.driverPaymentSection {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3rem;
+  padding: 2rem;
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+/* =============================================================================
+   Current Value Display (always visible above tabs)
+   ============================================================================= */
+
+.currentValueDisplay {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.currentValueRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.currentValueAmount {
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--black);
+}
+
+/* =============================================================================
+   Method Tabs (segmented control)
+   ============================================================================= */
+
+.methodTabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-gap: 1rem;
+  background: #e5e7eb;
+  border-radius: 8px;
+  padding: 3px;
+  overflow: hidden;
+}
+
+.methodTab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.65rem 0.5rem;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #6b7280;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.methodTab:hover:not(:disabled) {
+  color: #374151;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.methodTab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.methodTabActive {
+  background: white;
+  color: var(--black);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.methodTabActive:hover:not(:disabled) {
+  background: white;
+  color: var(--black);
+}
+
+.methodTabIcon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.methodTabLabel {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+/* =============================================================================
+   Method Panel (content area below tabs)
+   ============================================================================= */
+
+.methodPanel {
+  min-height: 80px;
+  animation: panelFadeIn 0.15s ease;
+}
+
+@keyframes panelFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =============================================================================
+   Input Section
+   ============================================================================= */
+
+.inputSection {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 1rem;
+}
+
+.inputWrapper {
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: opacity 0.3s ease;
+}
+
+.inputWrapper:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.dollarSign {
+  padding: 1rem;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-weight: 600;
+  font-size: 1.4rem;
+}
+
+.unitLabel {
+  padding: 1rem;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-weight: 600;
+  font-size: 1.4rem;
+}
+
+/* =============================================================================
+   Percentage Buttons Section (3 columns)
+   ============================================================================= */
+
+.percentageSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.percentageButtons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.percentBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: white;
+  border: 1px solid var(--stroke);
+  background-color: var(--lightGray);
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #374151;
+  transition: all 0.15s ease;
+}
+
+.percentBtn:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.percentBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.percentBtnActive {
+  background: #1e293b;
+  border-color: #1e293b;
+  color: white;
+}
+
+.percentBtnActive:hover:not(:disabled) {
+  background: #334155;
+  border-color: #334155;
+}
+
+.percentAmount {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: normal;
+}
+
+.percentBtnActive .percentAmount {
+  color: white;
+}
+
+/* =============================================================================
+   Tip Distribution Section
+   ============================================================================= */
+
+.tipDistributionSection {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #f59e0b;
+  border-radius: 10px;
+}
+
+.tipDistributionHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 1rem;
+}
+
+.tipDistributionIcon {
+  font-size: 1.5rem;
+}
+
+.tipDistributionOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tipOption {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tipOption:hover {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.tipOptionActive {
+  border-color: #f59e0b;
+  background: #fffbeb;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+.tipRadio {
+  margin-top: 3px;
+  accent-color: #f59e0b;
+  width: 18px;
+  height: 18px;
+}
+
+.tipOptionContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tipOptionLabel {
+  font-weight: 600;
+  font-size: 1.4rem;
+  color: #1f2937;
+}
+
+.tipOptionAmount {
+  font-weight: 700;
+  letter-spacing: normal;
+  font-size: 1.5rem;
+  color: #059669;
+}
+
+.tipOptionDesc {
+  font-size: 1.4rem;
+  color: #6b7280;
+}
+
+.customTipInput {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.tipMaxNote {
+  font-size: 1.4rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* =============================================================================
+   Driver Earnings Summary
+   ============================================================================= */
+
+.driverEarningsCard {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.earningsHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.earningsIcon {
+  font-size: 1.4rem;
+}
+
+.earningsTitle {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--black);
+}
+
+.earningsBreakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.earningsRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.earningsLabel {
+  font-size: 1.4rem;
+  color: var(--paragraph);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.earningsValue {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--black);
+}
+
+.tipValue {
+  color: var(--darkGreen);
+}
+
+.tipBadge {
+  font-size: 1.4rem;
+  padding: 0.5rem 1rem;
+  background: rgba(22, 163, 74, 0.15);
+  color: var(--darkGreen);
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: normal;
+}
+
+.tipBadgeReduced {
+  font-size: 1.4rem;
+  padding: 0.25rem 0.5rem;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: normal;
+}
+
+.earningsRowMuted {
+  opacity: 0.7;
+}
+
+.earningsDivider {
+  height: 1px;
+  background: #cbd5e1;
+  margin: 0.5rem 0;
+}
+
+.earningsTotalRow {
+  padding-top: 1rem;
+}
+
+.earningsTotalLabel {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  color: var(--black);
+}
+
+.earningsTotalValue {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  color: var(--black);
+}
+
+/* =============================================================================
+   Tip Notes
+   ============================================================================= */
+
+.tipNote {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(22, 163, 74, 0.08);
+  border: 1px solid rgba(22, 163, 74, 0.2);
+  border-radius: 5px;
+  font-size: 1.4rem;
+  color: var(--darkGreen);
+  line-height: 1.5;
+}
+
+.tipNotePartial {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 5px;
+  font-size: 1.4rem;
+  color: #92400e;
+  line-height: 1.5;
+}
+
+.tipNoteNone {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 5px;
+  font-size: 1.4rem;
+  color: #991b1b;
+  line-height: 1.5;
+}
+
+.noTipNote {
+  margin-top: 1rem;
+  font-size: 1.4rem;
+  color: var(--paragraph);
+  opacity: 0.8;
+  font-style: italic;
+}
+
+/* =============================================================================
+   Button Container
+   ============================================================================= */
+
+.btnContainer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+/* =============================================================================
+   SECTION LOCK / UNLOCK STATES
+   ============================================================================= */
+
+/* Locked — fields ghosted, labels stay full opacity */
+.sectionLocked input:disabled,
+.sectionLocked select:disabled,
+.sectionLocked textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.015);
+  border-color: var(--stroke);
+}
+
+.sectionLocked .percentBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.sectionLocked .tipOption {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.sectionLocked .tipRadio:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sectionLocked .inputWrapper {
+  opacity: 0.5;
+}
+
+.sectionLocked .methodTab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Editing — blue accent */
+.sectionEditing {
+  padding: 1.5rem;
+  background: var(--lighterBlue);
+  border: 2px solid var(--lightBlue);
+  border-radius: 10px;
+  transition:
+    border-color 0.3s ease,
+    background 0.3s ease;
+}
+
+/* Saved — green flash */
+.sectionSaved {
+  padding: 1.5rem;
+  background: rgba(22, 163, 74, 0.015);
+  border: 2px solid rgb(34, 197, 94);
+  border-radius: 10px;
+  transition:
+    border-color 0.3s ease,
+    background 0.3s ease;
+}
+
+/* Actions row */
+.sectionActionsRow {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  padding-top: 1rem;
+  border-top: 1px solid var(--stroke);
+  margin-top: 1rem;
+}
+
+/* =============================================================================
+   Responsive
+   ============================================================================= */
+
+@media screen and (max-width: 700px) {
+  .driverPaymentSection {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .percentageButtons {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .percentBtn {
+    padding: 8px 6px;
+  }
+
+  .methodTab {
+    padding: 0.55rem 0.35rem;
+    font-size: 1.4rem;
+    gap: 1rem;
+  }
+
+  .methodTabIcon {
+    font-size: 1.4rem;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .tipDistributionSection {
+    padding: 1rem;
+  }
+
+  .tipOption {
+    padding: 10px 12px;
+  }
+
+  .customTipInput {
+    flex-wrap: wrap;
+  }
+
+  .tipMaxNote {
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .noDriverMessage {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .percentageButtons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .currentValueAmount {
+    font-size: 1.8rem;
+  }
+}

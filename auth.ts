@@ -1,0 +1,136 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+// auth.ts
+import NextAuth, { type DefaultSession } from "next-auth";
+import { JWT } from "next-auth/jwt";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
+
+import authConfig from "./auth.config";
+import { db } from "@/lib/db";
+import { getUserByEmail } from "@/lib/user";
+import { LoginSchema } from "@/schemas/LoginSchema";
+import bcryptjs from "bcryptjs";
+
+export type AppRole = "USER" | "ADMIN" | "DRIVER" | "CORPORATE";
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id?: string;
+      roles?: AppRole[];
+      userId?: string;
+      emailVerified?: Date | null;
+    } & DefaultSession["user"];
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    userId?: string;
+    roles?: AppRole[];
+    emailVerified?: Date | null;
+  }
+}
+
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  ...authConfig,
+  adapter: PrismaAdapter(db),
+
+  providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+
+    Credentials({
+      name: "Credentials",
+      authorize: async (credentials) => {
+        const parsed = LoginSchema.safeParse(credentials);
+        if (!parsed.success) return null;
+
+        const { email, password } = parsed.data;
+
+        const user = await getUserByEmail(email);
+        if (!user || !user.password) return null;
+
+        const isCorrectPassword = await bcryptjs.compare(
+          password,
+          user.password,
+        );
+        return isCorrectPassword ? user : null;
+      },
+    }),
+  ],
+
+  events: {
+    async linkAccount({ user }) {
+      await db.user.update({
+        where: { id: user.id },
+        data: { emailVerified: new Date() },
+      });
+    },
+  },
+
+  callbacks: {
+    async jwt({ token, user }) {
+      // On initial sign-in, user object is available — use it directly
+      // This ensures roles are in the JWT immediately after login
+      if (user) {
+        token.sub = (user as any).id;
+        token.userId = (user as any).id;
+        token.roles =
+          Array.isArray((user as any).roles) && (user as any).roles.length > 0
+            ? ((user as any).roles as AppRole[])
+            : (["USER"] as AppRole[]);
+        token.emailVerified = (user as any).emailVerified ?? null;
+        return token;
+      }
+
+      // On subsequent requests, refresh from DB to pick up any role changes
+      const userId = token.sub;
+
+      const dbUser = userId
+        ? await db.user.findUnique({
+            where: { id: userId },
+            select: { id: true, roles: true, emailVerified: true },
+          })
+        : token.email
+          ? await db.user.findUnique({
+              where: { email: token.email },
+              select: { id: true, roles: true, emailVerified: true },
+            })
+          : null;
+
+      if (!dbUser) return token;
+
+      const roles =
+        Array.isArray(dbUser.roles) && dbUser.roles.length > 0
+          ? (dbUser.roles as unknown as AppRole[])
+          : (["USER"] as AppRole[]);
+
+      token.userId = dbUser.id;
+      token.roles = roles;
+      token.emailVerified = dbUser.emailVerified ?? null;
+
+      return token;
+    },
+
+    async session({ session, token }) {
+      if (token.userId) {
+        session.user.id = token.userId;
+        session.user.userId = token.userId;
+      }
+
+      if (token.roles) session.user.roles = token.roles;
+
+      if ("emailVerified" in token) {
+        session.user.emailVerified = token.emailVerified ?? null;
+      }
+
+      return session;
+    },
+  },
+
+  pages: { signIn: "/login" },
+});

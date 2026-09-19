@@ -1,0 +1,379 @@
+/* CorporateBilling.module.css */
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+}
+
+/* ─── Header ─── */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.meta {
+  font-size: 1.4rem;
+  color: var(--paragraph, #676767);
+}
+
+/* ─── KPI Grid ─── */
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.kpiCard {
+  background: #fff;
+  border: 1px solid var(--stroke, #d8d6d2);
+  border-radius: 12px;
+  padding: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.kpiLabel {
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  color: var(--paragraph, #676767);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.kpiValue {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  color: var(--black, #000);
+}
+
+.kpiWarn {
+  color: #b45309;
+}
+
+.kpiSub {
+  font-size: 1.4rem;
+  color: var(--paragraph, #676767);
+}
+
+/* ─── Monthly Limit Bar ─── */
+.limitCard {
+  background: #fff;
+  border: 1px solid var(--stroke, #d8d6d2);
+  border-radius: 12px;
+  padding: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.limitTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.limitLabel {
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  color: var(--black, #000);
+}
+
+.limitValue {
+  font-size: 1.4rem;
+  color: var(--paragraph, #676767);
+}
+
+.limitBarBg {
+  height: 8px;
+  background: var(--cream, #eae9e6);
+  border-radius: 50px;
+  overflow: hidden;
+}
+
+.limitBarFill {
+  height: 100%;
+  width: var(--limit-pct, 0%);
+  background: #16a34a;
+  border-radius: 50px;
+  transition: width 0.3s ease;
+}
+
+/* ─── Section Header ─── */
+.sectionHeader {
+  padding-top: 0.4rem;
+}
+
+.sectionTitle {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  color: var(--black, #000);
+  margin: 0;
+}
+
+/* ─── Tabs ─── */
+.tabRow {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* ─── Table Card ─── */
+.tableCard {
+  background: #fff;
+  border: 1px solid var(--stroke, #d8d6d2);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.thead {
+  background: var(--cream, #eae9e6);
+}
+
+.trHead {
+  border-bottom: 1px solid var(--stroke, #d8d6d2);
+}
+
+.th {
+  padding: 1rem 1.4rem;
+  text-align: left;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  color: var(--black, #000);
+  white-space: nowrap;
+}
+
+.thRight {
+  text-align: right;
+}
+
+.tr {
+  border-bottom: 1px solid var(--cream, #eae9e6);
+  transition: background 0.1s ease;
+}
+
+.tr:last-child {
+  border-bottom: none;
+}
+
+.tr:hover {
+  background: rgba(0, 0, 0, 0.015);
+}
+
+.td {
+  padding: 1rem 1.4rem;
+  font-size: 1.4rem;
+  color: var(--black, #000);
+  vertical-align: middle;
+}
+
+.tdRight {
+  text-align: right;
+}
+
+.cellStrong {
+  display: block;
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  color: var(--black, #000);
+}
+
+.cellSub {
+  display: block;
+  font-size: 1.4rem;
+  color: var(--paragraph, #676767);
+}
+
+.textRed {
+  color: #b91c1c;
+  font-weight: 600;
+  letter-spacing: normal;
+}
+
+/* ─── Badges ─── */
+.badge {
+  display: inline-block;
+  padding: 0.3rem 0.8rem;
+  border-radius: 50px;
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  white-space: nowrap;
+}
+
+.badgeGreen {
+  background: rgba(22, 163, 74, 0.1);
+  color: #15803d;
+}
+
+.badgeAmber {
+  background: rgba(245, 158, 11, 0.1);
+  color: #b45309;
+}
+
+.badgeBlue {
+  background: rgba(37, 99, 235, 0.1);
+  color: #1d4ed8;
+}
+
+.badgeRed {
+  background: rgba(220, 38, 38, 0.1);
+  color: #b91c1c;
+}
+
+.badgeNeutral {
+  background: var(--cream, #eae9e6);
+  color: var(--paragraph, #676767);
+}
+
+/* ─── Empty State ─── */
+.emptyState {
+  padding: 4rem 2rem;
+  text-align: center;
+  background: #fff;
+  border: 1px solid var(--stroke, #d8d6d2);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.emptyTitle {
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  color: var(--black, #000);
+  margin: 0;
+}
+
+.emptySub {
+  font-size: 1.4rem;
+  color: var(--paragraph, #676767);
+  margin: 0;
+  max-width: 400px;
+}
+
+.emptySub strong {
+  letter-spacing: normal;
+}
+
+/* ─── Append these to CorporateBilling.module.css ─── */
+
+/* Clickable invoice rows */
+.trClickable {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.trClickable:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+/* Invoice modal */
+.invoiceModalContent {
+  min-height: 300px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.invoiceLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 4rem 2rem;
+  font-size: 1.4rem;
+  color: #666;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-top-color: #000;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.trClickable {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.trClickable:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+/* Invoice modal */
+.invoiceModalContent {
+  min-height: 300px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.invoiceLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 4rem 2rem;
+  font-size: 1.4rem;
+  color: #666;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-top-color: #000;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ─── Mobile ─── */
+@media (max-width: 768px) {
+  .kpiGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .th,
+  .td {
+    padding: 0.8rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .kpiGrid {
+    grid-template-columns: 1fr;
+  }
+}

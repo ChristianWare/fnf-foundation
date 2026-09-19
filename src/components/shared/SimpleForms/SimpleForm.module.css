@@ -1,0 +1,72 @@
+/* Shared by ContactForm and CorporateInquiryForm. Plain fields, one button. */
+.form {
+  display: grid;
+  gap: 14px;
+  max-width: 560px;
+}
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.field {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  color: #111;
+}
+.field input,
+.field select,
+.field textarea {
+  font: inherit;
+  font-size: 15px;
+  padding: 9px 10px;
+  border: 1px solid #bbb;
+  background: #fff;
+  color: #111;
+  width: 100%;
+}
+.field textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: 2px solid #111;
+  outline-offset: -1px;
+}
+.error {
+  color: #b00020;
+  font-size: 13px;
+}
+.honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.btn {
+  font: inherit;
+  font-size: 15px;
+  padding: 10px 16px;
+  border: 1px solid #111;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+  justify-self: start;
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.status {
+  font-size: 14px;
+  color: #111;
+}
+@media (max-width: 600px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+}

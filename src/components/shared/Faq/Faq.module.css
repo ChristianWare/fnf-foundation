@@ -1,0 +1,180 @@
+.container {
+  background-color: var(--cream);
+  padding: 10rem 0rem;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-gap: 10rem;
+}
+
+.imgContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.digitalBox {
+  position: absolute;
+  content: "";
+  bottom: 0;
+  right: 0;
+  transform: rotate(90deg);
+}
+
+.img {
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.right {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  grid-gap: 5rem;
+}
+
+.desktopHeading {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 2rem;
+}
+
+.copy {
+  background: var(--lightBlue);
+  border: 1px solid var(--blue);
+  border-radius: 7px;
+  padding: 1.5rem;
+  font-weight: 600;
+}
+
+.mapDataContainer {
+  width: 100%;
+}
+
+.qaContainer {
+  padding: 3rem 0rem;
+  border-top: 2px solid var(--stroke);
+  width: 100%;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+  cursor: pointer;
+}
+
+.question {
+  transition: all 0.3s ease-in;
+}
+
+.question:hover,
+.questionActive {
+  color: var(--accent);
+}
+
+.answerContainer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease-in-out;
+}
+
+.answerContainer.show {
+  max-height: 350px;
+}
+
+.answer {
+  margin-top: 2rem;
+  width: 100%;
+  color: var(--paragraph);
+}
+
+.headingArrowContainer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.arrowContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--black);
+  width: 5rem;
+  height: 5rem;
+  border-radius: 5px;
+  padding-left: auto;
+}
+
+.icon {
+  cursor: pointer;
+  transition: all 0.4s ease-in-out;
+  color: var(--cream);
+  width: 2rem;
+  height: 2rem;
+  transform: rotate(45deg);
+}
+
+.iconFlip {
+  transform: rotate(230deg);
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  color: var(--accent);
+  width: 2rem;
+  height: 2rem;
+}
+
+.h3Container {
+  display: flex;
+  gap: 1rem;
+}
+
+.index {
+  margin-right: 1rem;
+  font-size: 2rem;
+}
+
+.mobileHeading {
+  display: none;
+}
+
+@media screen and (max-width: 1068px) {
+  .content {
+    grid-template-columns: 1fr;
+    grid-gap: 5rem;
+  }
+
+  .mapDataContainer {
+    margin-top: 0rem;
+  }
+
+  .imgContainer {
+    height: 450px;
+  }
+
+  .desktopHeading {
+    display: none;
+  }
+
+  .mobileHeading {
+    display: block;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .imgContainer {
+    height: 300px;
+  }
+}

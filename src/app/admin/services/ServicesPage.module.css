@@ -1,0 +1,344 @@
+.container {
+  display: grid;
+  gap: 1.4rem;
+}
+
+.header {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 2rem;
+}
+
+.headerTop {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.top {
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--stroke);
+  width: 100%;
+}
+
+.heading {
+  margin: 0;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.meta {
+  font-size: 1.4rem;
+  opacity: 0.75;
+}
+
+/* Filters */
+.filters {
+  display: grid;
+  gap: 2rem;
+}
+
+.filterGroup {
+  display: grid;
+  gap: 1rem;
+}
+
+.filterTitle {
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: normal;
+  opacity: 0.6;
+  text-transform: uppercase;
+}
+
+.tabRow {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Table */
+.tableWrap {
+  overflow-x: auto;
+  overflow-y: visible;
+  max-height: none;
+}
+
+.tableCard {
+  border-radius: 10px;
+  border: 1px solid var(--stroke);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+}
+
+.thead {
+  background: var(--white);
+  z-index: 2;
+}
+
+.trHead {
+  border-bottom: 1px solid var(--stroke);
+}
+
+.th {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--stroke);
+  white-space: nowrap;
+  font-size: 1.4rem;
+  font-weight: 700;
+  opacity: 0.7;
+}
+
+.th:last-child {
+  text-align: right;
+}
+
+.td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--stroke);
+  vertical-align: middle;
+}
+
+.tr {
+  border-bottom: 1px solid var(--stroke);
+  cursor: pointer;
+  transition: all 0.3s ease-in;
+  position: relative;
+}
+
+.tr:hover {
+  background: var(--lightGray);
+}
+
+.tr:focus-within {
+  background: var(--lightGray);
+}
+
+.tr:last-child {
+  border-bottom: none;
+}
+
+.trInactive {
+  opacity: 0.6;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.trInactive:hover {
+  opacity: 1;
+}
+
+/* Stretched link covers the entire tr */
+.rowStretchedLink {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.cellStrong {
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+
+.cellSub {
+  font-size: 1.4rem;
+  opacity: 0.7;
+}
+
+.pill {
+  font-size: 1.4rem;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2rem;
+}
+
+/* ── Sliding toggle ── */
+.toggle {
+  position: relative;
+  width: 52px;
+  height: 28px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 0.25s ease;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toggleOn {
+  background-color: #16a34a;
+}
+
+.toggleOff {
+  background-color: #d1d5db;
+}
+
+.toggleThumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.25s ease;
+}
+
+.toggleOn .toggleThumb {
+  transform: translateX(24px);
+}
+
+.toggleOff .toggleThumb {
+  transform: translateX(0px);
+}
+
+/* Empty State */
+.empty {
+  padding: 3rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 1rem;
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  background: var(--white);
+}
+
+.emptyTitle {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+.emptyCopy {
+  margin: 0;
+  opacity: 0.75;
+  font-size: 1.4rem;
+}
+
+/* Modal */
+.modalContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.modalActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Responsive */
+@media screen and (max-width: 768px) {
+  .tableCard {
+    border: 0;
+    background: transparent;
+    overflow: visible;
+    max-height: none;
+  }
+
+  .table {
+    min-width: 0;
+    border-collapse: separate;
+  }
+
+  .thead {
+    display: none;
+  }
+
+  .table,
+  .table tbody,
+  .tr,
+  .td {
+    display: block;
+    width: 100%;
+  }
+
+  .tr {
+    border: 1px solid var(--stroke);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 12px;
+    background: var(--white);
+  }
+
+  .tr:hover {
+    background: var(--white);
+  }
+
+  .trInactive {
+    background: rgba(0, 0, 0, 0.02);
+  }
+
+  .td {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--stroke);
+  }
+
+  .td:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .td:first-child {
+    padding-top: 0;
+  }
+
+  .td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 1.4rem;
+    font-weight: 900;
+    letter-spacing: normal;
+    opacity: 0.6;
+    margin-bottom: 6px;
+  }
+
+  .actions {
+    justify-content: flex-start;
+  }
+
+  .tabRow {
+    gap: 1rem;
+  }
+}

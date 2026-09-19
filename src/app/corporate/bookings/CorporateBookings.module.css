@@ -1,0 +1,520 @@
+/* CorporateBookings.module.css */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* ─── Header ─── */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+}
+
+.headerTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.top {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.heading {
+  margin: 0;
+}
+
+.meta {
+  font-size: 1.4rem;
+  color: var(--paragraph, #676767);
+  margin-top: 0.4rem;
+}
+
+.meta strong {
+  color: var(--black, #000);
+  font-size: 1.4rem;
+  letter-spacing: normal;
+}
+
+.metaSep {
+  margin-left: 0.25rem;
+}
+
+/* ─── Filters ─── */
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+.filterRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.filterTitle {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  color: var(--black, #000);
+}
+
+/* ─── Custom Date Range ─── */
+.rangeForm {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.rangeField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.rangeSubmit {
+  padding: 0.65rem 1.4rem;
+  border-radius: 8px;
+  border: 1px solid var(--stroke);
+  background: var(--black);
+  color: var(--white);
+  font-size: 1.4rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.rangeSubmit:hover {
+  opacity: 0.85;
+}
+
+/* ─── Checkbox filter sections ─── */
+.filterSections {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.filterSection {
+  background: linear-gradient(
+    135deg,
+    rgba(37, 99, 235, 0.03) 0%,
+    rgba(37, 99, 235, 0.06) 100%
+  );
+  border: 2px solid rgba(37, 99, 235, 0.1);
+  border-radius: 10px;
+  padding: 1.4rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.checkboxCol {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.checkboxLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--black, #000);
+  background: var(--white, #fff);
+  border: 1px solid var(--stroke, #d8d6d2);
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.checkboxLink:hover {
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+.checkboxActive {
+  background: var(--black, #000);
+  color: var(--white, #fff);
+  border-color: var(--black, #000);
+}
+
+.checkboxActive:hover {
+  border-color: var(--black, #000);
+}
+
+.checkboxBox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 2px solid var(--stroke, #d8d6d2);
+  background: var(--white, #fff);
+  flex-shrink: 0;
+  transition: all 0.12s ease;
+}
+
+.checkboxActive .checkboxBox {
+  background: var(--white, #fff);
+  border-color: var(--white, #fff);
+}
+
+.checkmark {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--black, #000);
+  line-height: 1;
+}
+
+.checkboxDisabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* ─── Search Row ─── */
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.searchRow input {
+  flex: 1;
+  min-width: 220px;
+}
+
+/* ─── Table Card ─── */
+.tableCard {
+  background: #fff;
+  border: 1px solid var(--stroke, #d8d6d2);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.thead {
+  background: var(--cream, #eae9e6);
+}
+
+.trHead {
+  border-bottom: 1px solid var(--stroke);
+}
+
+.th {
+  padding: 1rem 1.4rem;
+  text-align: left;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  color: var(--black, #000);
+  white-space: nowrap;
+}
+
+.thSortable {
+  user-select: none;
+}
+
+.thRight {
+  text-align: right;
+}
+
+.sortLink {
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.sortLink:hover {
+  text-decoration: underline;
+}
+
+.tr {
+  border-bottom: 1px solid var(--cream, #eae9e6);
+  transition: background 0.1s ease;
+}
+
+.tr:last-child {
+  border-bottom: none;
+}
+
+.tr:hover {
+  background: rgba(0, 0, 0, 0.015);
+}
+
+.td {
+  padding: 1rem 1.4rem;
+  font-size: 1.4rem;
+  color: var(--black, #000);
+  vertical-align: middle;
+}
+
+.tdRight {
+  text-align: right;
+}
+
+/* ─── Cell styles ─── */
+.pickupCell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.rowLink {
+  color: var(--black, #000);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1.4rem;
+  position: relative;
+  z-index: 6;
+}
+
+.rowLink:hover {
+  text-decoration: underline;
+}
+
+.rowStretchedLink {
+  text-decoration: none;
+  color: transparent;
+}
+
+.pickupMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pill {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 50px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  background: var(--cream, #eae9e6);
+  color: var(--paragraph, #676767);
+}
+
+.confirmationCode {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--paragraph, #676767);
+  font-family: monospace;
+}
+
+.routeCell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.routeFrom,
+.routeTo {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 1.4rem;
+}
+
+.routeIcon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.cellStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.cellStrong {
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  color: var(--black, #000);
+}
+
+.cellSub {
+  font-size: 1.4rem;
+  color: var(--paragraph, #676767);
+}
+
+.cellSubPending {
+  font-size: 1.4rem;
+  color: var(--paragraph, #676767);
+  font-style: italic;
+}
+
+.totalCell {
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: var(--black, #000);
+}
+
+/* ─── Empty State ─── */
+.empty {
+  padding: 4rem 2rem;
+  text-align: center;
+  background: #fff;
+  border: 1px solid var(--stroke, #d8d6d2);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.emptyIcon {
+  font-size: 3rem;
+}
+
+.emptyTitle {
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  color: var(--black, #000);
+  margin: 0;
+}
+
+.emptyCopy {
+  font-size: 1.4rem;
+  color: var(--paragraph, #676767);
+  margin: 0;
+  max-width: 400px;
+}
+
+/* ─── Pagination ─── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.paginationLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.paginationRight {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.paginationMeta {
+  font-size: 1.4rem;
+  color: var(--paragraph, #676767);
+}
+
+.pageBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 0.6rem;
+  border-radius: 8px;
+  font-size: 1.4rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid var(--stroke, #d8d6d2);
+  background: var(--white, #fff);
+  color: var(--black, #000);
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.pageBtn:hover {
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+.pageBtnActive {
+  background: var(--black, #000);
+  color: var(--white, #fff);
+  border-color: var(--black, #000);
+  pointer-events: none;
+}
+
+.pageBtnDisabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 1068px) {
+  .filterRow {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .headerTop {
+    flex-direction: column;
+  }
+
+  .filterRow {
+    grid-template-columns: 1fr;
+  }
+
+  .rangeForm {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchRow input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .th,
+  .td {
+    padding: 0.8rem 1rem;
+  }
+
+  .pagination {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

@@ -1,0 +1,256 @@
+.container {
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  height: fit-content;
+}
+
+.alert_complete {
+  border: 1px solid var(--green) !important;
+}
+
+.alert_critical {
+  background: rgba(239, 68, 68, 0.08);
+  border: 2px solid rgba(239, 68, 68, 0.3);
+}
+
+.alert_warning {
+  background: rgba(245, 158, 11, 0.08);
+  border: 2px solid rgba(245, 158, 11, 0.3);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.headerText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  font-weight: 700;
+  color: #111827;
+}
+
+.alert_critical .title {
+  color: #b91c1c;
+}
+
+.alert_warning .title {
+  color: #92400e;
+}
+
+.subtitle {
+  font-size: 1.4rem;
+  color: #6b7280;
+}
+
+.checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.checkItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.checkItem.complete {
+  opacity: 0.85;
+  border: 1px solid var(--lightGreen) !important;
+}
+
+.checkItem.complete:hover {
+  opacity: 1;
+}
+
+.checkItem.incomplete {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.checkItem.critical {
+  background: rgba(239, 68, 68, 0.06);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.checkIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  flex-shrink: 0;
+}
+
+.complete .checkIcon {
+  background: #22c55e;
+  color: white;
+}
+
+.incomplete .checkIcon {
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+.critical .checkIcon {
+  background: #ef4444;
+  color: white;
+}
+
+.checkContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.checkLabel {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.criticalBadge {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: #ef4444;
+  color: white;
+}
+
+.checkValue {
+  font-size: 1.4rem;
+  color: #22c55e;
+  font-weight: 500;
+}
+
+.checkDescription {
+  font-size: 1.4rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.impactWarning {
+  margin-top: 1.25rem;
+  padding: 10px 12px;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 5px;
+  font-size: 1.4rem;
+  color: #1e40af;
+  line-height: 1.4;
+}
+
+.impactWarning strong {
+  font-weight: 700;
+  letter-spacing: normal;
+}
+
+/* ✅ Clickable items */
+.clickable {
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
+}
+
+.clickable:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+  transform: translateX(4px);
+}
+
+.clickable:active {
+  transform: translateX(2px);
+}
+
+/* ✅ Go to arrow */
+.goToArrow {
+  margin-left: auto;
+  font-size: 1.6rem;
+  color: #94a3b8;
+  font-weight: 600;
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease;
+}
+
+.clickable:hover .goToArrow {
+  transform: translateX(4px);
+  color: #64748b;
+}
+
+/* Update checkItem to have flex for arrow positioning */
+.checkItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.alert_complete {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.alert_complete .header {
+  border-bottom-color: rgba(34, 197, 94, 0.2);
+}
+
+.alert_complete .title {
+  color: #15803d;
+}
+
+.alert_complete .subtitle {
+  color: #16a34a;
+}
+
+@media screen and (max-width: 568px) {
+  .container {
+    padding: 1.25rem;
+  }
+
+  .checkItem {
+    padding: 8px 10px;
+  }
+
+  .checkLabel {
+    font-size: 1.4rem;
+  }
+
+  .checkDescription,
+  .checkValue {
+    font-size: 1.4rem;
+  }
+}

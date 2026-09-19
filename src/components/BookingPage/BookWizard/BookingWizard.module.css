@@ -1,0 +1,549 @@
+.content {
+  display: grid;
+  grid-template-columns: 2fr 4fr;
+  grid-gap: 15rem;
+  align-items: start;
+}
+
+.checklistContainer,
+.checklistMobile {
+  position: sticky;
+  top: 85px;
+  z-index: 10;
+  height: fit-content;
+}
+
+.sectionBox {
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  display: grid;
+  grid-gap: 1rem;
+  padding: 2rem;
+}
+
+.routePickerInline {
+  margin-top: 1rem;
+  background-color: var(--cream);
+  padding: 1rem;
+  padding-top: 0rem;
+  border-radius: 14px;
+}
+
+.routePickerContainerMobile {
+  background-color: var(--cream);
+  padding: 1rem;
+  padding-top: 0rem;
+  border-radius: 20px;
+}
+
+.right {
+  align-self: start;
+}
+
+.contentBox {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  grid-gap: 3rem;
+}
+
+.wizardTop {
+  scroll-margin-top: 110px;
+}
+
+.stepPane {
+  animation: stepFadeIn 220ms ease-out both;
+}
+
+@keyframes stepFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stepPane {
+    animation: none;
+  }
+}
+
+.summaryCard {
+  padding: 0.9rem;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  display: grid;
+  gap: 6px;
+  background: white;
+}
+
+.summaryTitle {
+  font-weight: 600;
+}
+
+.summaryLine {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.summaryNote {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.textarea {
+  padding: 0.8rem;
+  border-radius: 5px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  resize: vertical;
+  background: white;
+}
+
+.actionsEnd {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.actionsBetween {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.bottomBtnContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5rem;
+}
+
+.button {
+  padding: 0.8rem 1rem;
+  border-radius: 5px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: white;
+  cursor: pointer;
+}
+
+.buttonEnabled {
+  opacity: 1;
+  cursor: pointer;
+}
+
+.buttonDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnContainer {
+  display: grid;
+  width: 100%;
+}
+
+.pickupDropoffContainer {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  grid-gap: 3rem;
+}
+
+.flightInfoSection {
+  margin-top: 1rem;
+  border: 2px solid var(--stroke);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.flightInfoFields {
+  padding: 0 1.25rem 1.25rem 1.25rem;
+  display: grid;
+  gap: 1rem;
+  animation: flightFieldsFadeIn 200ms ease-out;
+}
+
+@keyframes flightFieldsFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flightInfoFields {
+    animation: none;
+  }
+}
+
+.stopsListWizard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.stopRowWizard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stopBadgeWizard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #3b82f6;
+  color: white;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.removeStopBtnWizard {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.4rem;
+  transition: all 0.15s ease;
+}
+
+.removeStopBtnWizard:hover {
+  background: #fecaca;
+}
+
+.addStopBtnWizard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: white;
+  border: 2px dashed #cbd5e1;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: #475569;
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+.addStopBtnWizard:hover {
+  border-color: #3b82f6;
+  background: #f0f9ff;
+  color: #3b82f6;
+}
+
+.addStopFeeWizard {
+  font-size: 1.4rem;
+  opacity: 0.7;
+  font-weight: 400;
+}
+
+.stopSurchargeInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  font-size: 1.4rem;
+  color: #92400e;
+}
+
+.stopSurchargeAmount {
+  font-weight: 600;
+  color: #b45309;
+}
+
+/* Modal content */
+.modalContent {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 2rem;
+}
+
+.modalSubnote {
+  display: inline-block;
+  margin-top: 1rem;
+  opacity: 0.8;
+}
+
+.modalActions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-gap: 2rem;
+  margin-top: 2rem;
+}
+
+.callForPricingBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.callForPricingNote {
+  padding: 1.25rem;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.callForPricingNote strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 1.4rem;
+  color: #78350f;
+}
+
+.callForPricingNote p {
+  margin: 0;
+  font-size: 1.4rem;
+  color: #92400e;
+  line-height: 1.5;
+}
+
+.callForPricingNote a {
+  color: #78350f;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+@media screen and (max-width: 1268px) {
+  .content {
+    grid-gap: 2rem;
+    grid-template-columns: 1.5fr 2fr;
+  }
+}
+
+@media screen and (max-width: 1068px) {
+  .content {
+    grid-template-columns: 1fr;
+    grid-gap: 7rem;
+  }
+
+  .wizard {
+    margin-top: 5rem;
+    padding: 1rem;
+  }
+
+  .checklistMobile {
+    display: block;
+    top: 54px;
+  }
+
+  .contentBox {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .routePickerInline {
+    padding: 1rem;
+  }
+}
+
+@media screen and (min-width: 1069px) {
+  .checklistMobile {
+    display: none;
+  }
+}
+
+@media screen and (max-width: 568px) {
+  .checklistMobile {
+    top: 45px;
+  }
+
+  .bottomBtnContainer {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(1, 1fr);
+    grid-gap: 4rem;
+  }
+
+  .modalActions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .modalActions > * {
+    width: 100%;
+  }
+}
+
+/* ── Flight summary card (Step 3) ── */
+.flightSummaryCard {
+  background: var(--accent);
+  border-radius: 10px;
+  padding: 2rem 2.4rem 1.6rem;
+  color: var(--white);
+  position: relative;
+  overflow: hidden;
+}
+
+.flightSummaryTop {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1.6rem;
+}
+
+.flightSummaryAirlineCode {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.2rem 0.7rem;
+  border-radius: 4px;
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.flightSummaryAirlineName {
+  font-size: 1.4rem;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.flightSummaryFlightNum {
+  font-size: 1.3rem;
+  opacity: 0.7;
+  font-weight: 500;
+}
+
+.flightSummaryTimes {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  padding: 1.4rem 1.8rem;
+}
+
+.flightSummaryTimeBlock {
+  flex: 1;
+}
+
+.flightSummaryTimeBlockRight {
+  text-align: right;
+}
+
+.flightSummaryTimeLabel {
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  opacity: 0.65;
+  margin-bottom: 0.3rem;
+}
+
+.flightSummaryTimeValue {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.flightSummaryTerminal {
+  font-size: 1.2rem;
+  opacity: 0.7;
+  margin-top: 0.3rem;
+  font-weight: 500;
+}
+
+.flightSummaryDivider {
+  width: 1px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
+.flightSummaryDate {
+  text-align: center;
+  margin-top: 1.4rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+  opacity: 0.6;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.flightSummaryRoute {
+  display: flex;
+  align-items: center;
+  gap: 1.6rem;
+  margin-bottom: 1.6rem;
+}
+
+.flightSummaryIata {
+  font-size: 4rem;
+  font-weight: 900;
+  letter-spacing: -2px;
+  line-height: 1;
+  color: var(--white);
+  flex-shrink: 0;
+}
+
+.flightSummaryPath {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  height: 24px;
+}
+
+.flightSummaryDashedLine {
+  flex: 1;
+  height: 2px;
+  background: repeating-linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.5) 0px,
+    rgba(255, 255, 255, 0.5) 6px,
+    transparent 6px,
+    transparent 12px
+  );
+}
+
+.flightSummaryPlane {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.flightSummaryDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  flex-shrink: 0;
+}

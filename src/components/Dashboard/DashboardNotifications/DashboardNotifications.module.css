@@ -1,0 +1,176 @@
+.headerActions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.unreadCount {
+  background: rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--stroke);
+  color: var(--black);
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  font-size: 1.4rem;
+  font-weight: 900;
+}
+
+.feed {
+  display: grid;
+  gap: 3rem;
+}
+
+.dayGroup {
+  display: grid;
+  gap: 1rem;
+  border: 2px solid var(--stroke);
+  padding: 2rem;
+  border-radius: 15px;
+}
+
+.dayHeading {
+  font-weight: 900;
+  font-size: 1.4rem;
+  letter-spacing: normal;
+  opacity: 0.85;
+}
+
+.activityList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.activityItem {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  align-items: start;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--stroke);
+  background: var(--white);
+}
+
+.activityLeft {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  grid-gap: 2rem;
+  min-width: 0;
+}
+
+.tagRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--black);
+  flex: 0 0 auto;
+}
+
+.box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 2rem;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.primaryBtn,
+.secondaryBtn,
+.tertiaryBtn {
+  text-decoration: none;
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 1.4rem;
+  line-height: 1;
+  white-space: nowrap;
+  border: 1px solid var(--stroke);
+}
+
+.primaryBtn {
+  background: var(--black);
+  color: var(--white);
+  border-color: var(--black);
+}
+
+.secondaryBtn {
+  background: var(--cream);
+  color: var(--black);
+}
+
+.tertiaryBtn {
+  background: transparent;
+  color: var(--black);
+}
+
+.empty {
+  background: var(--white);
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.emptyTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.emptyCopy {
+  margin: 0;
+  opacity: 0.75;
+}
+
+.actionsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.btnContainer {
+  margin-top: 1rem;
+}
+
+.footerNote {
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.urgentItem {
+  background: rgba(239, 68, 68, 0.05);
+  border-color: rgba(239, 68, 68, 0.2);
+  animation: urgentPulse 2s ease-in-out infinite;
+}
+
+@keyframes urgentPulse {
+  0%,
+  100% {
+    background: rgba(239, 68, 68, 0.05);
+  }
+  50% {
+    background: rgba(239, 68, 68, 0.1);
+  }
+}

@@ -1,0 +1,330 @@
+/* FlightStatusCard.module.css — matches FlightTracker card style */
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── Card ── */
+.card {
+  background: var(--accent);
+  border-radius: 10px 10px 0 0;
+  padding: 2rem 2.4rem 1.6rem;
+  color: var(--white);
+  position: relative;
+  overflow: hidden;
+  transition: opacity 0.2s ease;
+}
+
+.cardLoading {
+  opacity: 0.7;
+}
+
+/* ── Top row ── */
+.cardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.6rem;
+}
+
+.topRight {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.airline {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.airlineCode {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.2rem 0.7rem;
+  border-radius: 4px;
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.airlineName {
+  font-size: 1.4rem;
+  font-weight: 600;
+  opacity: 0.9;
+  color: var(--white);
+}
+
+.flightNum {
+  font-size: 1.3rem;
+  opacity: 0.7;
+  font-weight: 500;
+  color: var(--cream);
+}
+
+/* ── Status badge ── */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 1.2rem;
+  border-radius: 20px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.statusOnTime {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--darkGreen);
+}
+
+.statusDelayed {
+  background: var(--yellow);
+  color: var(--darkYellow);
+}
+
+.statusCancelled {
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--white);
+}
+
+.statusLanded {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--blue);
+}
+
+.statusInFlight {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--white);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.statusBoarding {
+  background: var(--yellow);
+  color: var(--darkYellow);
+}
+
+.statusLoading {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.statusError {
+  background: rgba(0, 0, 0, 0.25);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.delayText {
+  font-size: 1.2rem;
+  opacity: 0.8;
+  font-weight: 500;
+}
+
+/* ── Route ── */
+.route {
+  display: flex;
+  align-items: center;
+  gap: 1.6rem;
+  margin-bottom: 2rem;
+}
+
+.airport {
+  flex: 0 0 auto;
+}
+
+.airportRight {
+  text-align: right;
+}
+
+.iata {
+  font-size: 4.4rem;
+  font-weight: 900;
+  letter-spacing: -2px;
+  line-height: 1;
+  color: var(--white);
+}
+
+.iataEmpty {
+  opacity: 0.25;
+  letter-spacing: 0;
+}
+
+.airportName {
+  font-size: 1.2rem;
+  opacity: 0.7;
+  margin-top: 0.2rem;
+  max-width: 110px;
+  line-height: 1.3;
+}
+
+.airportRight .airportName {
+  margin-left: auto;
+  text-align: right;
+}
+
+/* ── Flight path ── */
+.flightPath {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  height: 24px;
+}
+
+.dashedLine {
+  flex: 1;
+  height: 2px;
+  background: repeating-linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.5) 0px,
+    rgba(255, 255, 255, 0.5) 6px,
+    transparent 6px,
+    transparent 12px
+  );
+}
+
+.dashedLineDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  flex-shrink: 0;
+}
+
+.planeIcon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.2));
+}
+
+/* ── Times ── */
+.times {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  padding: 1.4rem 1.8rem;
+}
+
+.timeBlock {
+  flex: 1;
+}
+
+.timeBlockRight {
+  text-align: right;
+}
+
+.timeLabel {
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  opacity: 0.65;
+  margin-bottom: 0.3rem;
+}
+
+.timeValue {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.terminal {
+  font-size: 1.2rem;
+  opacity: 0.7;
+  margin-top: 0.3rem;
+  font-weight: 500;
+}
+
+.timeDivider {
+  width: 1px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
+/* ── Date strip ── */
+.dateStrip {
+  text-align: center;
+  margin-top: 1.4rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+  opacity: 0.6;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+/* ── Error ── */
+.errorMsg {
+  margin-top: 1.2rem;
+  padding: 1rem 1.4rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  font-size: 1.3rem;
+  opacity: 0.85;
+}
+
+/* ── Placeholder dimming ── */
+.dimmed {
+  opacity: 0.3;
+}
+
+/* ── Footer ── */
+.footer {
+  background: var(--black);
+  border-radius: 0 0 10px 10px;
+  padding: 1.2rem 1.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.refreshBtn {
+  padding: 0.6rem 1.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 1.3rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--white);
+  transition: background 0.15s ease;
+}
+
+.refreshBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.refreshBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.lastChecked {
+  font-size: 1.3rem;
+  color: var(--black300);
+}
+
+@media screen and (max-width: 560px) {
+  .iata {
+    font-size: 3.2rem;
+  }
+
+  .card {
+    padding: 1.6rem 1.6rem 1.2rem;
+  }
+
+  .footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 1.2rem 1.6rem;
+  }
+}

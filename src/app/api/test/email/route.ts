@@ -1,0 +1,54 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { NextResponse } from "next/server";
+import { Resend } from "resend";
+import { SITE } from "@/config/site";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const CLIENT_NAME = SITE.name;
+
+export async function GET() {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from =
+    process.env.EMAIL_FROM ||
+    `${CLIENT_NAME} <${SITE.email.noReply}>`;
+
+  console.log("Email Config:");
+  console.log("  API Key:", apiKey ? `${apiKey.slice(0, 8)}...` : "MISSING");
+  console.log("  From:", from);
+
+  if (!apiKey) {
+    return NextResponse.json({
+      error: "Missing RESEND_API_KEY env var",
+    });
+  }
+
+  const testTo = "chris.ware.dev@gmail.com";
+
+  try {
+    const resend = new Resend(apiKey);
+
+    const result = await resend.emails.send({
+      from,
+      to: testTo,
+      subject: `Test Email from ${CLIENT_NAME} 🚗`,
+      text: "If you're reading this, email notifications are working!",
+    });
+
+    console.log("Resend result:", result);
+
+    return NextResponse.json({
+      success: true,
+      result,
+    });
+  } catch (error: any) {
+    console.error("Resend Error:", error);
+
+    return NextResponse.json({
+      error: "Email send failed",
+      message: error.message,
+      name: error.name,
+    });
+  }
+}

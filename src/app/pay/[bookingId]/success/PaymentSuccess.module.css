@@ -1,0 +1,307 @@
+.container {
+  min-height: calc(100vh - 80px);
+  padding: 10rem 0 6rem;
+  background: linear-gradient(180deg, #f8fdf8 0%, #ffffff 100%);
+}
+
+/* ── Two-column layout ── */
+.twoCol {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 3rem;
+  align-items: start;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ── Single content (error states, no invoice) ── */
+.singleContent {
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.left {
+  position: sticky;
+  top: 100px;
+}
+
+.right {
+  width: 100%;
+  min-width: 0;
+}
+
+.invoiceWrapper {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+/* ── Card ── */
+.card {
+  background: white;
+  border-radius: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 3rem 2.5rem;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  text-align: center;
+}
+
+/* ── Icons ── */
+.iconSuccess {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 1.5rem;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: scaleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.iconSuccess svg {
+  width: 40px;
+  height: 40px;
+  color: white;
+}
+
+.iconError {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 1.5rem;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: scaleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.iconError svg {
+  width: 40px;
+  height: 40px;
+  color: white;
+}
+
+@keyframes scaleIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ── Typography ── */
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--black);
+  margin: 0 0 0.75rem 0;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: 1.4rem;
+  color: #666;
+  margin: 0 0 2rem 0;
+  line-height: 1.5;
+}
+
+/* ── Confirmation Box ── */
+.confirmationBox {
+  background: var(--cream);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.confirmationHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.confirmationLabel {
+  font-size: 1.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #888;
+  font-weight: 500;
+}
+
+.confirmationId {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--black);
+  font-family: monospace;
+  letter-spacing: 0.05em;
+}
+
+/* ── Trip Summary ── */
+.tripSummary {
+  text-align: left;
+  background: #fafafa;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.tripTitle {
+  font-size: 1.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #888;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+}
+
+.tripRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--stroke);
+}
+
+.tripRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.tripRow:first-of-type {
+  padding-top: 0;
+}
+
+.tripIcon {
+  font-size: 1.4rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border-radius: 8px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.tripInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.tripLabel {
+  font-size: 1.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #888;
+  font-weight: 500;
+}
+
+.tripValue {
+  font-size: 1.4rem;
+  color: var(--black);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* ── Next Steps ── */
+.nextSteps {
+  text-align: left;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.nextStepsTitle {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  color: #0369a1;
+  margin: 0 0 0.75rem 0;
+}
+
+.nextStepsList {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 1.4rem;
+  color: #0c4a6e;
+  line-height: 1.7;
+}
+
+.nextStepsList li {
+  margin-bottom: 0.5rem;
+}
+
+.nextStepsList li:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Actions ── */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.actions > * {
+  width: 100%;
+}
+
+/* ── Help Text ── */
+.helpText {
+  font-size: 1.4rem;
+  color: #888;
+  margin: 0;
+  letter-spacing: normal;
+}
+
+.helpLink {
+  color: var(--black);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.helpLink:hover {
+  color: var(--accent);
+}
+
+/* ── Responsive ── */
+@media screen and (max-width: 1068px) {
+  .twoCol {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .container {
+    padding: 5rem 0 4rem;
+  }
+
+  .twoCol {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .left {
+    position: static;
+  }
+
+  .card {
+    padding: 2rem 1.5rem;
+    border-radius: 16px;
+  }
+}

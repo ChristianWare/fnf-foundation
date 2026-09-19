@@ -1,0 +1,82 @@
+.form {
+  display: grid;
+  gap: 10px;
+}
+
+.button {
+  padding: 1rem;
+  border-radius: 5px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  justify-self: start;
+  background: #fff;
+  font: inherit;
+}
+
+.button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.field {
+  display: grid;
+  gap: 1rem;
+}
+
+.fieldLabel {
+  font-size: 1.4rem;
+  opacity: 0.8;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.input {
+  padding: 1rem;
+  border-radius: 5px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: #fff;
+  font: inherit;
+  font-weight: 600;
+  font-size: 1.4rem;
+  letter-spacing: normal;
+}
+
+.input:focus {
+  outline: none;
+  border-color: rgba(0, 0, 0, 0.4);
+}
+
+.input:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.inputHighlight {
+  background: #f0fdf4;
+  border-color: #22c55e;
+  font-weight: 700;
+  font-size: 1.4rem;
+  letter-spacing: normal;
+}
+
+.inputHighlight:focus {
+  border-color: #16a34a;
+}
+
+.btnContainer {
+  margin-top: 1rem;
+}
+
+@media screen and (max-width: 600px) {
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+}

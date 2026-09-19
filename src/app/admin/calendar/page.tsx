@@ -1,0 +1,110 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import AdminRideCalendar from "@/components/admin/AdminRideCalendar/AdminRideCalendar";
+import AdminDriversCalendarSection from "@/components/admin/AdminDriversCalendarSection/AdminDriversCalendarSection";
+import { db } from "@/lib/db";
+import { startOfNextMonth } from "../lib/phxDates";
+import { getCompanySettings } from "../../../../actions/admin/companySettings";
+import { formatIsoDate, startOfMonth } from "@/lib/timezone";
+import AdminBlackoutDatesSection from "@/components/admin/AdminBlackoutDates/AdminBlackoutDatesSection";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+function parseMonthParam(v: string | undefined) {
+  if (!v) return null;
+  const [y, m] = v.split("-").map(Number);
+  if (!y || !m) return null;
+  return new Date(Date.UTC(y, m - 1, 1, 12, 0, 0));
+}
+
+function monthKey(d: Date) {
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  return `${y}-${m}`;
+}
+
+function ymdFromUtcDate(d: Date) {
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+export default async function AdminCalendarPage(props: {
+  searchParams: Promise<{ month?: string }>;
+}) {
+  const searchParams = await props.searchParams;
+
+  const now = new Date();
+  const { timezone: tz } = await getCompanySettings();
+  const parsed = parseMonthParam(searchParams?.month);
+  const baseMonth =
+    parsed ??
+    new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 12, 0, 0));
+
+  const monthStart = startOfMonth(baseMonth, tz);
+  const nextMonthStart = startOfNextMonth(monthStart, tz);
+
+  const excluded = ["CANCELLED", "NO_SHOW", "REFUNDED"] as const;
+
+  const [rides, blackouts] = await Promise.all([
+    db.booking.findMany({
+      where: {
+        pickupAt: { gte: monthStart, lt: nextMonthStart },
+        NOT: { status: { in: excluded as any } },
+      },
+      select: { pickupAt: true },
+    }),
+
+    db.blackoutDate.findMany({
+      where: {
+        ymd: {
+          gte: ymdFromUtcDate(monthStart),
+          lt: ymdFromUtcDate(nextMonthStart),
+        },
+      },
+      select: { ymd: true },
+    }),
+  ]);
+
+  const countsByYmd: Record<string, number> = {};
+  for (const r of rides) {
+    const key = formatIsoDate(r.pickupAt, tz);
+    countsByYmd[key] = (countsByYmd[key] ?? 0) + 1;
+  }
+
+  const blackoutsByYmd: Record<string, boolean> = {};
+  for (const b of blackouts) {
+    blackoutsByYmd[b.ymd] = true;
+  }
+
+  const mk = monthKey(baseMonth);
+
+  return (
+    <section className='container' aria-label='Admin calendar'>
+      <header className='header'>
+        <h1 className='heading h2'>Calendar</h1>
+        <p className='subheading'>
+          Click a day to view rides scheduled for that date.
+        </p>
+      </header>
+
+      <AdminRideCalendar
+        initialMonth={mk}
+        countsByYmd={countsByYmd}
+        blackoutsByYmd={blackoutsByYmd}
+        todayYmd={formatIsoDate(now, tz)}
+        timeZone={tz}
+      />
+
+      <div className='miniNote' style={{ marginTop: 10 }}>
+        Time zone: {tz}
+      </div>
+
+      <AdminBlackoutDatesSection />
+
+      {/* ── Driver schedules ── */}
+      <AdminDriversCalendarSection initialMonth={mk} />
+    </section>
+  );
+}

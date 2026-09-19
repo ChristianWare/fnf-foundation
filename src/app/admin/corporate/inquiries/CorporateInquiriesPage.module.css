@@ -1,0 +1,317 @@
+.container {
+  display: grid;
+  gap: 1.4rem;
+}
+
+.header {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 3rem;
+}
+
+.headerTop {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.top {
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--stroke);
+  width: 100%;
+}
+
+.heading {
+  margin: 0;
+}
+
+.meta {
+  font-size: 1.4rem;
+  opacity: 0.75;
+}
+
+.metaSep {
+  margin-left: 0.6rem;
+}
+
+.filters {
+  display: grid;
+  gap: 2rem;
+}
+
+.filterGroup {
+  display: grid;
+  gap: 1rem;
+}
+
+.filterTitle {
+  font-size: 1.4rem;
+  font-weight: 900;
+  opacity: 0.6;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tabRow {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.empty {
+  background: var(--white);
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  padding: 2rem;
+  display: grid;
+  gap: 1rem;
+}
+
+/* ── Bulk action bar ── */
+.bulkBar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.4rem;
+  background: var(--white);
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+}
+
+.bulkCount {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-right: auto;
+}
+
+/* ── Table ── */
+.tableCard {
+  background: var(--white);
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
+}
+
+.thead {
+  position: sticky;
+  top: 0;
+  background: var(--white);
+  z-index: 2;
+}
+
+.trHead {
+  border-bottom: 1px solid var(--stroke);
+}
+
+.thCheck {
+  width: 44px;
+  padding: 12px 8px 12px 14px;
+  text-align: center;
+}
+
+.tdCheck {
+  width: 44px;
+  padding: 12px 8px 12px 14px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--green, #16a34a);
+}
+
+.th {
+  text-align: left;
+  padding: 12px 14px;
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.td {
+  padding: 12px 14px;
+  font-size: 1.4rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  vertical-align: middle;
+}
+
+.tr {
+  transition: background 0.15s;
+  cursor: pointer;
+}
+
+.tr:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.trSelected {
+  background: rgba(22, 163, 74, 0.07);
+  outline: 1px solid rgba(22, 163, 74, 0.2);
+  outline-offset: -1px;
+}
+
+.trSelected:hover {
+  background: rgba(22, 163, 74, 0.1);
+}
+
+.rowStretchedLink {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+}
+
+.rowLink {
+  position: relative;
+  z-index: 6;
+  text-decoration: none;
+  color: inherit;
+}
+
+.rowLink:hover {
+  text-decoration: underline;
+}
+
+.cellStrong {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.cellSub {
+  font-size: 1.4rem;
+  opacity: 0.7;
+}
+
+/* ── Modal content ── */
+.modalContent {
+  display: grid;
+  gap: 2rem;
+  min-width: 100%;
+}
+
+.modalTitle {
+  margin: 0;
+}
+
+.modalBody {
+  font-size: 1.4rem;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.deleteList {
+  display: grid;
+  gap: 0;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(239, 68, 68, 0.03);
+  max-height: 28rem;
+  overflow-y: auto;
+}
+
+.deleteListItem {
+  display: grid;
+  gap: 0.3rem;
+  padding: 1.2rem 1.6rem;
+  border-bottom: 1px solid rgba(239, 68, 68, 0.1);
+}
+
+.deleteListItem:last-child {
+  border-bottom: none;
+}
+
+.deleteListCompany {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.deleteListMeta {
+  font-size: 1.3rem;
+  opacity: 0.7;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.deleteListSep {
+  opacity: 0.4;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+/* ── Pagination ── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.paginationLeft {
+  display: flex;
+  align-items: center;
+}
+
+.paginationMeta {
+  font-size: 1.4rem;
+  opacity: 0.8;
+}
+
+.paginationRight {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.pageBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--stroke);
+  border-radius: 6px;
+  font-size: 1.4rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--black);
+  background: var(--white);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pageBtn:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.pageBtnDisabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}

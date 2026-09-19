@@ -1,0 +1,174 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use server";
+
+import { db } from "@/lib/db";
+import { auth } from "../../auth";
+import { revalidatePath } from "next/cache";
+
+type AppRole = "USER" | "DRIVER" | "ADMIN";
+
+function toInt(v: FormDataEntryValue | null, fallback = 0) {
+  const n = Number(v ?? fallback);
+  return Number.isFinite(n) ? Math.trunc(n) : fallback;
+}
+
+function toCents(v: FormDataEntryValue | null, fallback = 0) {
+  const n = parseFloat((v ?? fallback).toString());
+  return Number.isFinite(n) ? Math.round(n * 100) : fallback;
+}
+
+function toString(v: FormDataEntryValue | null) {
+  const s = (v ?? "").toString().trim();
+  return s.length ? s : null;
+}
+
+function getActorId(session: any) {
+  return (
+    (session?.user?.id as string | undefined) ??
+    (session?.user?.userId as string | undefined)
+  );
+}
+
+function getSessionRoles(session: any): AppRole[] {
+  const roles = session?.user?.roles;
+  return Array.isArray(roles) && roles.length > 0 ? (roles as AppRole[]) : [];
+}
+
+async function requireAdmin() {
+  const session = await auth();
+  const actorId = getActorId(session);
+  const roles = getSessionRoles(session);
+
+  if (!session?.user || !actorId || !roles.includes("ADMIN")) {
+    return { error: "Unauthorized" as const };
+  }
+
+  return { session };
+}
+
+export async function createVehicleCategory(formData: FormData) {
+  const gate = await requireAdmin();
+  if ("error" in gate) return { error: gate.error };
+
+  const name = (formData.get("name") ?? "").toString().trim();
+  if (!name) return { error: "Name is required." };
+
+  const imageUrl = toString(formData.get("imageUrl"));
+  const description = toString(formData.get("description"));
+
+  const capacity = toInt(formData.get("capacity"), 1);
+  const luggageCapacity = toInt(formData.get("luggageCapacity"), 0);
+  const sortOrder = toInt(formData.get("sortOrder"), 0);
+  const minHours = toInt(formData.get("minHours"), 0);
+
+  const active = formData.get("active") === "on";
+  const callForPricing = formData.get("callForPricing") === "on";
+  const callForPricingMessage = toString(formData.get("callForPricingMessage"));
+
+  const baseFareCents = toCents(formData.get("baseFareCents"), 0);
+  const perMileCents = toCents(formData.get("perMileCents"), 0);
+  const perMinuteCents = toCents(formData.get("perMinuteCents"), 0);
+  const perHourCents = toCents(formData.get("perHourCents"), 0);
+
+  // Overage policy
+  const overageFeeCents = toCents(formData.get("overageFeeCents"), 0);
+  const overageIncrementMinutes = toInt(
+    formData.get("overageIncrementMinutes"),
+    30,
+  );
+
+  await db.vehicle.create({
+    data: {
+      name,
+      imageUrl,
+      description,
+      capacity,
+      luggageCapacity,
+      sortOrder,
+      minHours,
+      active,
+      callForPricing,
+      callForPricingMessage,
+      baseFareCents,
+      perMileCents,
+      perMinuteCents,
+      perHourCents,
+      overageFeeCents,
+      overageIncrementMinutes,
+    },
+  });
+
+  revalidatePath("/admin/vehicle-categories");
+  return { success: true as const };
+}
+
+export async function updateVehicleCategory(id: string, formData: FormData) {
+  const gate = await requireAdmin();
+  if ("error" in gate) return { error: gate.error };
+
+  const name = (formData.get("name") ?? "").toString().trim();
+  if (!name) return { error: "Name is required." };
+
+  const imageUrl = toString(formData.get("imageUrl"));
+  const description = toString(formData.get("description"));
+
+  const capacity = toInt(formData.get("capacity"), 1);
+  const luggageCapacity = toInt(formData.get("luggageCapacity"), 0);
+  const sortOrder = toInt(formData.get("sortOrder"), 0);
+  const minHours = toInt(formData.get("minHours"), 0);
+
+  const active = formData.get("active") === "on";
+  const callForPricing = formData.get("callForPricing") === "on";
+  const callForPricingMessage = toString(formData.get("callForPricingMessage"));
+
+  const baseFareCents = toCents(formData.get("baseFareCents"), 0);
+  const perMileCents = toCents(formData.get("perMileCents"), 0);
+  const perMinuteCents = toCents(formData.get("perMinuteCents"), 0);
+  const perHourCents = toCents(formData.get("perHourCents"), 0);
+
+  // Overage policy
+  const overageFeeCents = toCents(formData.get("overageFeeCents"), 0);
+  const overageIncrementMinutes = toInt(
+    formData.get("overageIncrementMinutes"),
+    30,
+  );
+
+  await db.vehicle.update({
+    where: { id },
+    data: {
+      name,
+      imageUrl,
+      description,
+      capacity,
+      luggageCapacity,
+      sortOrder,
+      minHours,
+      active,
+      callForPricing,
+      callForPricingMessage,
+      baseFareCents,
+      perMileCents,
+      perMinuteCents,
+      perHourCents,
+      overageFeeCents,
+      overageIncrementMinutes,
+    },
+  });
+
+  revalidatePath("/admin/vehicle-categories");
+  revalidatePath(`/admin/vehicle-categories/${id}`);
+  return { success: true as const };
+}
+
+export async function toggleVehicleCategory(id: string, active: boolean) {
+  const gate = await requireAdmin();
+  if ("error" in gate) return { error: gate.error };
+
+  await db.vehicle.update({
+    where: { id },
+    data: { active },
+  });
+
+  revalidatePath("/admin/vehicle-categories");
+  return { success: true as const };
+}

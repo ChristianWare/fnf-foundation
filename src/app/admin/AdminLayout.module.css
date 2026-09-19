@@ -1,0 +1,82 @@
+.container {
+  padding: 10rem 0rem;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 1fr 5fr;
+  grid-gap: 3rem;
+}
+
+.heading {
+  display: none;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--stroke);
+  width: 100%;
+}
+
+.right {
+  width: 100%;
+  min-width: 0; /* prevents grid blowout */
+}
+
+@media screen and (max-width: 1068px) {
+  .container {
+    padding-top: 5rem;
+  }
+
+  .content {
+    grid-template-columns: repeat(1, 1fr);
+    gap: 7rem;
+  }
+
+  .heading {
+    display: block;
+    text-align: center;
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  .AdminSideNavContainer {
+    position: sticky;
+    top: 80px;
+    align-self: start;
+  }
+}
+
+@media screen and (max-width: 568px) {
+  .container {
+    padding: 2rem 0;
+  }
+
+  .content {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 5rem;
+    align-items: start;
+  }
+
+  /* left panel flows normally — no sticky */
+  .left {
+    position: static;
+  }
+
+  .AdminSideNavContainer {
+    position: static;
+    z-index: auto;
+  }
+
+  .right {
+    padding: 0rem;
+    min-width: 0;
+  }
+
+  .heading {
+    display: none;
+  }
+}
+
+:global(body.modal-open) .right {
+  position: relative;
+  z-index: -999;
+}

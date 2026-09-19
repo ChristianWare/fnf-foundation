@@ -1,0 +1,77 @@
+/* src/components/shared/DirtyFormProvider/DirtyFormProvider.module.css */
+
+.modalContent {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 2rem;
+}
+
+.warningBox {
+  width: 100%;
+  padding: 1rem;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  color: #92400e;
+}
+
+.warningBox strong {
+  display: block;
+  margin-bottom: 1rem;
+  font-size: 2rem;
+}
+
+.warningList {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 1.4rem;
+  line-height: 1.6;
+}
+
+.warningList li {
+  margin-bottom: 0.5rem;
+  letter-spacing: normal;
+}
+
+.warningList li:last-child {
+  margin-bottom: 0;
+}
+
+.changedFieldsList {
+  margin: 0.4rem 0 0.25rem 0;
+  padding-left: 1.25rem;
+  font-size: 1.4rem;
+  opacity: 0.85;
+  list-style: disc;
+  line-height: 1.5;
+}
+
+.changedFieldsList li {
+  margin-bottom: 0.25rem;
+}
+
+.scrollLink {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: #92400e;
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.scrollLink:hover {
+  color: #78350f;
+}
+
+.modalActions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+}

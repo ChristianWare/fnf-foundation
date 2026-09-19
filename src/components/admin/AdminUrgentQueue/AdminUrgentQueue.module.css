@@ -1,0 +1,210 @@
+.container {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  padding: 2rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.meta {
+  font-size: 1.4rem;
+  opacity: 0.75;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 3rem;
+}
+
+.card {
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cardHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 1rem;
+  width: 100%;
+}
+
+.countPill {
+  min-width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.7rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.list {
+  list-style: none;
+  display: grid;
+  gap: 1rem;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  background: var(--lightGrayii);
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  padding: 1.5rem;
+  width: 100%;
+}
+
+.rowLeft {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+}
+
+.rel {
+  font-size: 1.4rem;
+  opacity: 0.75;
+}
+
+.rowMiddle {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 2rem;
+  font-size: 1.4rem;
+  width: 100%;
+}
+
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.rowRight {
+  display: grid;
+  width: 100%;
+}
+
+.tripRow {
+  background: var(--lightGrayii);
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  padding: 1.5rem;
+  width: 100%;
+  display: grid;
+  gap: 1.2rem;
+}
+
+.tripLeft {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.tripTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.tripBadges {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.customerType {
+  font-size: 1.4rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--black);
+}
+
+.tripActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.tripMain {
+  display: grid;
+  gap: 1.2rem;
+  width: 100%;
+}
+
+.tripHeadline {
+  display: grid;
+  gap: 1rem;
+}
+
+.tripRoute {
+  display: grid;
+  gap: 1rem;
+}
+
+.routeValue {
+  font-size: 1.4rem;
+  opacity: 0.9;
+}
+
+.tripDetails {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+  width: 100%;
+}
+
+.detail {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--stroke);
+  background: white;
+}
+
+.tripGuestMeta {
+  display: grid;
+  gap: 1rem;
+}
+
+@media screen and (min-width: 900px) {
+  .tripDetails {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media screen and (max-width: 1100px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

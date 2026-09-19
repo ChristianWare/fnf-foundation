@@ -1,0 +1,239 @@
+.container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-row-gap: 5rem;
+  grid-column-gap: 0rem;
+  align-items: flex-start;
+  background-color: var(--cream);
+  box-shadow: 0 10px 10px -1px rgba(0, 0, 0, 0.3);
+  padding: 2rem;
+  padding-top: 4rem;
+  border-radius: 10px;
+  /* border-top-right-radius: 0px; */
+  /* border-top-left-radius: 0px; */
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: 100%;
+  isolation: isolate;
+}
+
+.step:after {
+  position: absolute;
+  content: "";
+  width: 100%;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.18);
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: -1;
+}
+
+/* First step - align left */
+.step:nth-child(1) {
+  align-items: flex-start;
+}
+
+.step:nth-child(1) .stepDetails {
+  align-items: flex-start;
+}
+
+.step:nth-child(1) .right {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.step:nth-child(1) .marker {
+  justify-content: flex-start;
+}
+
+/* Second step - align center */
+.step:nth-child(2),
+.step:nth-child(5) {
+  align-items: center;
+}
+
+.step:nth-child(2) .stepDetails,
+.step:nth-child(5) .stepDetails {
+  align-items: center;
+}
+
+.step:nth-child(2) .right,
+.step:nth-child(5) .right {
+  align-items: center;
+  text-align: center;
+}
+
+.step:nth-child(2) .marker,
+.step:nth-child(5) .marker {
+  justify-content: center;
+}
+
+/* Third step - align right */
+.step:nth-child(3),
+.step:nth-child(6) {
+  align-items: flex-end;
+}
+
+.step:nth-child(3) .stepDetails,
+.step:nth-child(6) .stepDetails
+
+{
+  align-items: flex-end;
+}
+
+.step:nth-child(3) .right,
+.step:nth-child(6) .right
+
+{
+  align-items: flex-end;
+  text-align: right;
+}
+
+.step:nth-child(3) .marker,
+.step:nth-child(6) .marker {
+  justify-content: flex-end;
+}
+
+.stepDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 4rem;
+  width: 100%;
+}
+
+.left {
+  flex: 0 0 auto;
+  width: 100%;
+}
+
+.marker {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+}
+
+.stepNumber {
+  border: 1px solid var(--strokeii);
+  width: 3rem;
+  height: 3rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  font-size: 1.4rem;
+  font-weight: 700;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.stepNumber:before {
+  position: absolute;
+  content: "";
+  width: 100%;
+  height: 100%;
+  border: 10px solid var(--white);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+}
+
+/* ✅ ACTIVE (current step): accent + pulse */
+.stepNumberActive {
+  background-color: var(--accent);
+  color: var(--cream);
+  border-color: transparent;
+}
+
+.stepNumberActive::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 999px;
+  border: 2px solid var(--accent);
+  opacity: 0.45;
+  transform: scale(1);
+  animation: stepPulseRing 1.35s ease-out infinite;
+  pointer-events: none;
+}
+
+/* ✅ COMPLETE (already finished): accent, NO pulse */
+.stepNumberComplete {
+  background-color: var(--accent);
+  color: var(--cream);
+  border-color: transparent;
+}
+
+/* ✅ INACTIVE (not reached): default */
+.stepNumberInactive {
+  background-color: var(--cream);
+  color: var(--strokeii);
+}
+
+@keyframes stepPulseRing {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.55;
+  }
+  70% {
+    transform: scale(1.22);
+    opacity: 0.08;
+  }
+  100% {
+    transform: scale(1.22);
+    opacity: 0;
+  }
+}
+
+@keyframes stepPulseGlow {
+  0% {
+    transform: scale(0.96);
+    opacity: 0.25;
+  }
+  70% {
+    transform: scale(1.18);
+    opacity: 0.06;
+  }
+  100% {
+    transform: scale(1.18);
+    opacity: 0;
+  }
+}
+
+.connector {
+  display: none;
+}
+
+.right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 1rem;
+}
+
+.label {
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+}
+
+.copy {
+  font-size: 1.4rem;
+  color: var(--paragraph);
+  font-weight: 400;
+}
+
+@media screen and (max-width: 768px) {
+  .container {
+    /* border-top-right-radius: 10px;
+    border-top-left-radius: 10px; */
+    padding-top: 4rem;
+  }
+}

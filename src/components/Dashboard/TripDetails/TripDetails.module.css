@@ -1,0 +1,193 @@
+.backLink {
+  text-decoration: none;
+  color: var(--black);
+  opacity: 0.75;
+  width: fit-content;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.strong {
+  font-weight: 900;
+  color: var(--black);
+}
+
+.headerActions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.inlineForm {
+  display: inline-flex;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 14px;
+}
+
+.leftCol,
+.rightCol {
+  display: grid;
+  gap: 14px;
+}
+
+.card {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 14px;
+  border: 1px solid var(--stroke);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 3rem;
+  width: 100%;
+}
+
+.cardTop {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  grid-gap: 3rem;
+  width: 100%;
+}
+
+.tripMeta {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  grid-gap: 1rem;
+  width: 100%;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 1rem;
+}
+
+.emptyTitleLocal {
+  border-bottom: 1px solid var(--stroke);
+  width: 100%;
+  padding-bottom: 0.5rem;
+}
+
+.pill {
+  margin-left: 10px;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.btnRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.addonList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}
+
+.addonItem {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: start;
+  padding: 1.5rem;
+  border-radius: 7px;
+  background: var(--lightGrayii);
+  border: 1px solid var(--stroke);
+  width: 100%;
+}
+
+.addonMain {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.addonTitle {
+  font-weight: 900;
+  font-size: 1.4rem;
+  word-break: break-word;
+}
+
+.qty {
+  opacity: 0.75;
+  font-weight: 900;
+}
+
+.addonNotes {
+  font-size: 1.4rem;
+  color: var(--paragraph);
+  word-break: break-word;
+}
+
+.addonPrice {
+  font-weight: 900;
+  font-size: 1.4rem;
+  white-space: nowrap;
+}
+
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}
+
+.timelineItem {
+  padding: 1.5rem;
+  border-radius: 7px;
+  background: var(--lightGrayii);
+  border: 1px solid var(--stroke);
+}
+
+.timelineTop {
+  display: grid;
+  gap: 1rem;
+}
+
+.timelineMeta {
+  font-size: 1.4rem;
+  opacity: 0.75;
+}
+
+.footerActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+@media screen and (max-width: 1000px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,61 @@
+.main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 20px 96px;
+  color: #111;
+  line-height: 1.6;
+  font-size: 17px;
+}
+.meta {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 12px;
+}
+.meta a,
+.related a {
+  color: #111;
+}
+.h1 {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.15;
+  margin: 0 0 24px;
+}
+.body :global(h2) {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 32px 0 8px;
+}
+.body :global(h3) {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 24px 0 8px;
+}
+.body :global(p),
+.body :global(ul),
+.body :global(ol) {
+  margin: 0 0 16px;
+}
+.body :global(a) {
+  color: #111;
+}
+.body :global(img) {
+  max-width: 100%;
+  height: auto;
+}
+.body :global(table) {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 15px;
+}
+.body :global(th),
+.body :global(td) {
+  border: 1px solid #ddd;
+  padding: 6px 8px;
+  text-align: left;
+}
+.related {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e5e5;
+}

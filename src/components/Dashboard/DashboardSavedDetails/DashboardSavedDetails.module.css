@@ -1,0 +1,184 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+}
+
+.card {
+  background: var(--white);
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  padding: 1rem;
+  display: grid;
+  gap: 3rem;
+  min-width: 0;
+}
+
+.cardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.metaRight {
+  font-size: 1.4rem;
+  color: var(--paragraph);
+  opacity: 0.9;
+  margin-top: 0.2rem;
+  text-align: right;
+  display: none;
+}
+
+.rows {
+  display: grid;
+  gap: 1rem;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.key {
+  font-size: 1.4rem;
+  color: var(--paragraph);
+}
+
+.val {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--black);
+  word-break: break-word;
+  text-align: right;
+}
+
+.tripMetaBox {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+}
+
+.tripMetaLine {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.tripMetaKey {
+  font-size: 1.4rem;
+  color: var(--paragraph);
+}
+
+.tripMetaVal {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--black);
+  word-break: break-word;
+  text-align: right;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.item {
+  border: 1px solid var(--stroke);
+  border-radius: 5px;
+  padding: 1rem;
+}
+
+.itemLeft {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 1rem;
+}
+
+.itemTitle {
+  font-weight: 900;
+  font-size: 1.4rem;
+  word-break: break-word;
+}
+
+.itemMeta {
+  font-size: 1.4rem;
+  color: var(--paragraph);
+  opacity: 0.9;
+}
+
+.muted {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--paragraph);
+}
+
+.formActions,
+.cardActions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.secondaryBtn {
+  text-decoration: none;
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 1.4rem;
+  line-height: 1;
+  white-space: nowrap;
+  border: 1px solid var(--stroke);
+  background: var(--cream);
+  color: var(--black);
+}
+
+.empty {
+  background: var(--white);
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  padding: 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.emptyTitle {
+  margin: 0;
+  font-weight: 900;
+  font-size: 1.6rem;
+}
+
+.emptyCopy {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--paragraph);
+}
+
+.actionsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+.btnContainer {
+  margin-top: 1rem;
+}
+
+@media screen and (max-width: 1268px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

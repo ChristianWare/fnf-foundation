@@ -1,0 +1,451 @@
+// src/lib/invoice/EstimatePDF.tsx
+import { Document, Page, Text, View } from "@react-pdf/renderer";
+import type { InvoiceData } from "./types";
+import { formatMoney } from "./types";
+import { pdfStyles as s } from "./InvoicePDF.styles";
+import { StyleSheet } from "@react-pdf/renderer";
+
+// Estimate-specific extra styles
+const es = StyleSheet.create({
+  estimateTitle: {
+    fontSize: 28,
+    fontFamily: "Helvetica-Bold",
+    marginBottom: 12,
+    color: "#1e40af",
+  },
+  disclaimerBox: {
+    backgroundColor: "#fffbeb",
+    borderWidth: 1,
+    borderColor: "#f59e0b",
+    borderRadius: 4,
+    padding: 10,
+    marginBottom: 20,
+  },
+  disclaimerTitle: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    color: "#92400e",
+    marginBottom: 4,
+  },
+  disclaimerText: {
+    fontSize: 8,
+    color: "#78350f",
+    lineHeight: 1.5,
+  },
+  pendingRow: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    paddingVertical: 6,
+    borderTopWidth: 1,
+    borderTopColor: "#eeeeee",
+    marginTop: 2,
+  },
+  pendingLabel: {
+    fontSize: 11,
+    fontFamily: "Helvetica-Bold",
+    color: "#1e40af",
+  },
+  pendingValue: {
+    fontSize: 11,
+    fontFamily: "Helvetica-Bold",
+    color: "#1e40af",
+    textAlign: "right" as const,
+  },
+  hoursBox: {
+    backgroundColor: "#f0f9ff",
+    borderWidth: 1,
+    borderColor: "#bae6fd",
+    borderRadius: 4,
+    padding: 10,
+    marginBottom: 14,
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+  },
+  hoursLabel: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    color: "#0369a1",
+  },
+  hoursValue: {
+    fontSize: 11,
+    fontFamily: "Helvetica-Bold",
+    color: "#0369a1",
+  },
+  depositBox: {
+    backgroundColor: "#ecfdf5",
+    borderWidth: 1,
+    borderColor: "#6ee7b7",
+    borderRadius: 4,
+    padding: 10,
+    marginTop: 10,
+  },
+  depositTitle: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    color: "#065f46",
+    marginBottom: 6,
+  },
+  depositRow: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    marginBottom: 3,
+  },
+  depositLabel: {
+    fontSize: 9,
+    color: "#047857",
+  },
+  depositValue: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    color: "#047857",
+  },
+  depositNote: {
+    fontSize: 8,
+    color: "#6b7280",
+    marginTop: 4,
+    lineHeight: 1.4,
+  },
+});
+
+type EstimateInvoiceData = InvoiceData & {
+  hoursRequested?: number | null;
+  hoursBilled?: number | null;
+  pricingStrategy?: string | null;
+};
+
+export default function EstimatePDF({
+  invoice,
+}: {
+  invoice: EstimateInvoiceData;
+}) {
+  const hasStops = invoice.trip.stops.length > 0;
+  const isHourly = invoice.pricingStrategy === "HOURLY";
+  const hoursRequested = invoice.hoursRequested;
+  const hoursBilled = invoice.hoursBilled;
+
+  return (
+    <Document>
+      <Page size='A4' style={s.page}>
+        {/* ── Header ── */}
+        <View style={s.header}>
+          <View style={s.logoSection}>
+            <View style={s.logoFallbackRow}>
+              {/* <View style={s.logoBox}>
+                <Text style={s.logoBoxLetter}>N</Text>
+              </View> */}
+              <Text style={s.companyName}>{invoice.company.name}</Text>
+            </View>
+            <View style={{ marginTop: 6 }}>
+              {invoice.company.address ? (
+                <Text style={s.companyDetails}>{invoice.company.address}</Text>
+              ) : null}
+              {invoice.company.city ? (
+                <Text style={s.companyDetails}>{invoice.company.city}</Text>
+              ) : null}
+              {invoice.company.phone ? (
+                <Text style={s.companyDetails}>{invoice.company.phone}</Text>
+              ) : null}
+              {invoice.company.email ? (
+                <Text style={s.companyDetails}>{invoice.company.email}</Text>
+              ) : null}
+            </View>
+          </View>
+
+          <View style={s.invoiceInfoCol}>
+            <Text style={es.estimateTitle}>ESTIMATE</Text>
+            <View style={s.metaRow}>
+              <Text style={s.metaLabel}>Ref #</Text>
+              <Text style={s.metaValue}>{invoice.invoiceNumber}</Text>
+            </View>
+            {invoice.bookingConfirmation ? (
+              <View style={s.metaRow}>
+                <Text style={s.metaLabel}>Booking</Text>
+                <Text style={s.metaValue}>#{invoice.bookingConfirmation}</Text>
+              </View>
+            ) : null}
+            <View style={s.metaRow}>
+              <Text style={s.metaLabel}>Date</Text>
+              <Text style={s.metaValue}>{invoice.invoiceDate}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* ── Disclaimer ── */}
+        <View style={es.disclaimerBox}>
+          <Text style={es.disclaimerTitle}>
+            ⚠ ESTIMATE — Not a Final Invoice
+          </Text>
+          <Text style={es.disclaimerText}>
+            This document is a non-binding price estimate based on the
+            information provided at the time of booking. The final price may
+            vary based on actual trip duration, route changes, additional stops,
+            or other factors. A final invoice will be issued after the trip is
+            completed and payment is confirmed.
+          </Text>
+        </View>
+
+        {/* ── Bill To ── */}
+        <View style={s.billToSection}>
+          <Text style={s.sectionLabel}>PREPARED FOR</Text>
+          <Text style={s.customerName}>{invoice.customer.name}</Text>
+          {invoice.customer.email ? (
+            <Text style={s.customerDetail}>{invoice.customer.email}</Text>
+          ) : null}
+          {invoice.customer.phone ? (
+            <Text style={s.customerDetail}>{invoice.customer.phone}</Text>
+          ) : null}
+        </View>
+
+        {/* ── Hours box for charter/hourly bookings ── */}
+        {isHourly && hoursRequested ? (
+          <View style={es.hoursBox}>
+            <View>
+              <Text style={es.hoursLabel}>CHARTER SERVICE — HOURS</Text>
+              <Text style={{ fontSize: 8, color: "#0369a1", marginTop: 2 }}>
+                Final charge based on actual hours used
+              </Text>
+            </View>
+            <View style={{ alignItems: "flex-end" }}>
+              <Text style={es.hoursValue}>
+                {hoursBilled ?? Math.ceil(hoursRequested)} hrs billed
+              </Text>
+              {hoursBilled && hoursBilled !== hoursRequested ? (
+                <Text style={{ fontSize: 8, color: "#64748b", marginTop: 2 }}>
+                  ({hoursRequested} hrs requested, minimum applied)
+                </Text>
+              ) : (
+                <Text style={{ fontSize: 8, color: "#64748b", marginTop: 2 }}>
+                  ({hoursRequested} hrs requested)
+                </Text>
+              )}
+            </View>
+          </View>
+        ) : null}
+
+        {/* ── Trip details ── */}
+        <View style={s.tripSection}>
+          <Text style={s.sectionLabel}>TRIP DETAILS</Text>
+          <View style={s.tripGrid}>
+            <View style={s.tripItem}>
+              <Text style={s.tripItemLabel}>DATE & TIME</Text>
+              <Text style={s.tripItemValue}>{invoice.trip.date}</Text>
+            </View>
+            <View style={s.tripItem}>
+              <Text style={s.tripItemLabel}>SERVICE</Text>
+              <Text style={s.tripItemValue}>{invoice.trip.serviceName}</Text>
+            </View>
+            <View style={s.tripItem}>
+              <Text style={s.tripItemLabel}>VEHICLE</Text>
+              <Text style={s.tripItemValue}>{invoice.trip.vehicleName}</Text>
+            </View>
+            <View style={s.tripItem}>
+              <Text style={s.tripItemLabel}>PASSENGERS / LUGGAGE</Text>
+              <Text style={s.tripItemValue}>
+                {invoice.trip.passengers} / {invoice.trip.luggage}
+              </Text>
+            </View>
+            {isHourly && hoursRequested ? (
+              <View style={s.tripItem}>
+                <Text style={s.tripItemLabel}>HOURS REQUESTED</Text>
+                <Text style={s.tripItemValue}>{hoursRequested} hrs</Text>
+              </View>
+            ) : null}
+            {isHourly && hoursBilled ? (
+              <View style={s.tripItem}>
+                <Text style={s.tripItemLabel}>HOURS BILLED (MIN. APPLIED)</Text>
+                <Text style={s.tripItemValue}>{hoursBilled} hrs</Text>
+              </View>
+            ) : null}
+            {!isHourly && invoice.trip.distanceMiles ? (
+              <View style={s.tripItem}>
+                <Text style={s.tripItemLabel}>EST. DISTANCE</Text>
+                <Text style={s.tripItemValue}>
+                  {invoice.trip.distanceMiles.toFixed(1)} miles
+                </Text>
+              </View>
+            ) : null}
+          </View>
+
+          {/* Route — per-leg for multi-trip, single route otherwise */}
+          {invoice.legs && invoice.legs.length > 1 ? (
+            invoice.legs.map((leg, legIdx) => (
+              <View key={legIdx} style={{ marginBottom: 10 }}>
+                <Text
+                  style={{
+                    fontSize: 9,
+                    fontFamily: "Helvetica-Bold",
+                    color: "#1e40af",
+                    marginBottom: 4,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Trip {leg.legNumber} — {leg.date}
+                </Text>
+                <View style={s.route}>
+                  <View style={s.routePoint}>
+                    <View style={[s.routeMarker, s.routeMarkerPickup]}>
+                      <Text style={s.routeMarkerText}>A</Text>
+                    </View>
+                    <View style={s.routeContent}>
+                      <Text style={s.routePointLabel}>PICKUP</Text>
+                      <Text style={s.routePointAddress}>
+                        {leg.pickupAddress}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={s.routePoint}>
+                    <View style={[s.routeMarker, s.routeMarkerDropoff]}>
+                      <Text style={s.routeMarkerText}>B</Text>
+                    </View>
+                    <View style={s.routeContent}>
+                      <Text style={s.routePointLabel}>DROPOFF</Text>
+                      <Text style={s.routePointAddress}>
+                        {leg.dropoffAddress}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            ))
+          ) : (
+            <View style={s.route}>
+              <View style={s.routePoint}>
+                <View style={[s.routeMarker, s.routeMarkerPickup]}>
+                  <Text style={s.routeMarkerText}>A</Text>
+                </View>
+                <View style={s.routeContent}>
+                  <Text style={s.routePointLabel}>PICKUP</Text>
+                  <Text style={s.routePointAddress}>
+                    {invoice.trip.pickupAddress}
+                  </Text>
+                </View>
+              </View>
+
+              {hasStops &&
+                invoice.trip.stops.map((stop, i) => (
+                  <View key={i} style={s.routePoint}>
+                    <View style={[s.routeMarker, s.routeMarkerStop]}>
+                      <Text style={s.routeMarkerText}>{i + 1}</Text>
+                    </View>
+                    <View style={s.routeContent}>
+                      <Text style={s.routePointLabel}>STOP {i + 1}</Text>
+                      <Text style={s.routePointAddress}>{stop.address}</Text>
+                    </View>
+                  </View>
+                ))}
+
+              <View style={s.routePoint}>
+                <View style={[s.routeMarker, s.routeMarkerDropoff]}>
+                  <Text style={s.routeMarkerText}>B</Text>
+                </View>
+                <View style={s.routeContent}>
+                  <Text style={s.routePointLabel}>DROPOFF</Text>
+                  <Text style={s.routePointAddress}>
+                    {invoice.trip.dropoffAddress}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* ── Line items ── */}
+        <View style={s.lineItemsSection}>
+          <View style={s.lineItemsHeader}>
+            <Text style={s.lineItemsHeaderDesc}>DESCRIPTION</Text>
+            <Text style={s.lineItemsHeaderAmount}>ESTIMATED AMOUNT</Text>
+          </View>
+          {invoice.lineItems.map((item, i) => (
+            <View key={i} style={s.lineItemRow}>
+              <Text style={s.lineItemDesc}>{item.description}</Text>
+              <Text style={s.lineItemAmount}>
+                {formatMoney(item.amount, invoice.currency)}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        {/* ── Totals ── */}
+        <View style={s.totalsSection}>
+          <View style={s.totalsGrid}>
+            <View style={s.totalsRow}>
+              <Text style={s.totalsLabel}>Subtotal</Text>
+              <Text style={s.totalsValue}>
+                {formatMoney(invoice.subtotalCents, invoice.currency)}
+              </Text>
+            </View>
+            {invoice.feesCents > 0 ? (
+              <View style={s.totalsRow}>
+                <Text style={s.totalsLabel}>Fees</Text>
+                <Text style={s.totalsValue}>
+                  {formatMoney(invoice.feesCents, invoice.currency)}
+                </Text>
+              </View>
+            ) : null}
+            {invoice.taxesCents > 0 ? (
+              <View style={s.totalsRow}>
+                <Text style={s.totalsLabel}>Tax</Text>
+                <Text style={s.totalsValue}>
+                  {formatMoney(invoice.taxesCents, invoice.currency)}
+                </Text>
+              </View>
+            ) : null}
+            <View style={es.pendingRow}>
+              <Text style={es.pendingLabel}>Estimated Total</Text>
+              <Text style={es.pendingValue}>
+                {formatMoney(invoice.totalCents, invoice.currency)}
+              </Text>
+            </View>
+          </View>
+
+          {invoice.depositMode &&
+            invoice.depositCents &&
+            (invoice.depositCents ?? 0) > 0 && (
+              <View style={es.depositBox}>
+                <Text style={es.depositTitle}>DEPOSIT OPTION AVAILABLE</Text>
+                <View style={es.depositRow}>
+                  <Text style={es.depositLabel}>
+                    Deposit ({invoice.depositPercent ?? ""}%)
+                  </Text>
+                  <Text style={es.depositValue}>
+                    {formatMoney(invoice.depositCents, invoice.currency)}
+                  </Text>
+                </View>
+                {(invoice.balanceCents ?? 0) > 0 && (
+                  <View style={es.depositRow}>
+                    <Text style={es.depositLabel}>
+                      Balance due
+                      {invoice.balanceDueDate
+                        ? ` by ${invoice.balanceDueDate}`
+                        : ""}
+                    </Text>
+                    <Text style={es.depositValue}>
+                      {formatMoney(invoice.balanceCents, invoice.currency)}
+                    </Text>
+                  </View>
+                )}
+                <Text style={es.depositNote}>
+                  You may pay this deposit now or pay the full amount upfront
+                  when you receive the payment link.
+                </Text>
+              </View>
+            )}
+        </View>
+
+        {/* ── Footer ── */}
+        <View style={s.footer}>
+          <Text style={s.footerText}>
+            Thank you for choosing {invoice.company.name}!
+          </Text>
+          <Text style={s.footerSmall}>
+            Questions? Contact us at{" "}
+            {invoice.company.email || invoice.company.phone}
+          </Text>
+        </View>
+      </Page>
+    </Document>
+  );
+}
+
