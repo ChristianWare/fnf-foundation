@@ -2,6 +2,7 @@ import Link from "next/link";
 // import Nav from "@/components/shared/Nav/Nav";
 import type { PageGuide } from "@/lib/pageGuides";
 import styles from "./PagePlaceholder.module.css";
+import Nav from "../Nav/Nav";
 
 type Props = PageGuide & {
   /** Overrides the guide title (used by dynamic pages: "Airport Transfers") */
@@ -27,7 +28,7 @@ export default function PagePlaceholder({
 }: Props) {
   return (
     <>
-      {/* <Nav /> */}
+      <Nav />
       <main className={styles.main}>
         <p className={styles.kicker}>Page template · {route}</p>
         <h1 className={styles.h1}>{heading ?? title}</h1>
