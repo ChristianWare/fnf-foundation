@@ -9,6 +9,7 @@ import ScrollToTop from "@/components/shared/ScrollToTop/ScrollToTop";
 import PlausibleProvider from "next-plausible";
 import { SITE } from "@/config/site";
 import { serviceAreaCities } from "@/lib/cities";
+import Nav from "@/components/shared/Nav/Nav";
 
 const inter = Inter({
   variable: "--inter",
@@ -121,6 +122,7 @@ export default function RootLayout({
         >
           <SessionProviderWrap>
             <ToastsProvider />
+            <Nav />
             {children}
             <Footer />
           </SessionProviderWrap>

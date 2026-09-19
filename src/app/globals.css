@@ -89,7 +89,7 @@ h1,
   font-size: 5.4rem;
   font-weight: 500;
   line-height: 1.1em;
-  letter-spacing: -2.2px;
+  /* letter-spacing: -2.2px; */
 }
 
 h2,
@@ -97,7 +97,7 @@ h2,
   font-size: 4rem;
   font-weight: 500;
   line-height: 1.1em;
-  letter-spacing: -2.2px;
+  /* letter-spacing: -2.2px; */
 }
 
 h3,
@@ -105,7 +105,7 @@ h3,
   font-size: 3rem;
   font-weight: 500;
   line-height: 1.2em;
-  letter-spacing: -1.6px;
+  /* letter-spacing: -1.6px; */
 }
 
 h4,
@@ -113,7 +113,7 @@ h4,
   font-size: 2.4rem;
   font-weight: 500;
   line-height: 1.2em;
-  letter-spacing: -1.3px;
+  /* letter-spacing: -1.3px; */
 }
 
 h5,
@@ -121,7 +121,7 @@ h5,
   font-size: 2rem;
   font-weight: 500;
   line-height: 1.2;
-  letter-spacing: -1px;
+  /* letter-spacing: -1px; */
 }
 
 h6,
@@ -129,7 +129,7 @@ h6,
   font-size: 1.8rem;
   font-weight: 500;
   line-height: 1.2;
-  letter-spacing: -0.8px;
+  /* letter-spacing: -0.8px; */
 }
 
 button {
@@ -146,7 +146,7 @@ textarea {
   font-size: 1.6rem;
   line-height: 1.5em;
   font-weight: 500;
-  letter-spacing: -0.8px;
+  /* letter-spacing: -0.8px; */
   hyphens: auto;
   color: var(--black);
 }
@@ -230,7 +230,7 @@ select:focus {
     font-size: 50%;
   }
 
-  h1,
+  /* h1,
   .h1 {
     letter-spacing: -2px;
     font-size: 42px;
@@ -247,7 +247,7 @@ select:focus {
   .h3 {
     font-size: 2.8rem;
     letter-spacing: -1.5px;
-  }
+  } */
 
   p {
     font-size: 16px;
@@ -887,10 +887,10 @@ th {
   }
 }
 
-@media screen and (max-width: 480px) {
+/* @media screen and (max-width: 480px) {
   h1,
   .h1 {
     letter-spacing: -1.5px;
     font-size: 35px;
   }
-}
+} */
