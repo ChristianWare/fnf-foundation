@@ -14,6 +14,7 @@ import { getCompanySettings } from "../../../../../actions/admin/companySettings
 import DefaultProfileImg from "../../../../../public/images/placeholder.jpg";
 import RouteMapDisplay from "@/components/admin/RouteMapDisplay/RouteMapDisplay";
 import UserTripPaymentClient from "./UserTripPaymentClient";
+import { getAmountDue } from "@/lib/booking/getAmountDue";
 import UserCancelTripClient from "./UserCancelTripClient";
 import InvoiceSection from "./InvoiceSection";
 import type { InvoiceData, InvoiceLineItem } from "@/lib/invoice/types";
@@ -282,8 +283,14 @@ export default async function UserTripDetailPage({
       }))
       .filter((s) => s.lat && s.lng) ?? [];
 
+  // What paying for this ride costs, from the same calculation the checkout
+  // route charges by (so the form's amount is the amount that gets charged).
+  const due = await getAmountDue(booking.id);
+  const rideBalanceCents = due?.rideBalanceCents ?? booking.totalCents;
+
   // Show payment section if pending payment
-  const showPaymentSection = currentStatus === "PENDING_PAYMENT";
+  const showPaymentSection =
+    currentStatus === "PENDING_PAYMENT" && rideBalanceCents > 0;
 
   // Can cancel if not paid and not in terminal/active status
   const canCancel =
@@ -483,7 +490,7 @@ export default async function UserTripDetailPage({
             bookingId={booking.id}
             serviceName={booking.serviceType?.name ?? "Transportation"}
             vehicleName={booking.vehicle?.name ?? "Vehicle"}
-            baseFareCents={booking.totalCents}
+            baseFareCents={rideBalanceCents}
             currency={booking.currency}
             stops={stopsForPayment}
             stopSurchargeCents={stopSurchargeCents}

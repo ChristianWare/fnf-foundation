@@ -1,16 +1,52 @@
+// actions/payments/chargeCardOnFileForCheckout.ts
 "use server";
 
 import { db } from "@/lib/db";
 import { getStripe } from "@/lib/stripe";
+import { billScope, chargeSavedCard } from "@/lib/booking/chargeSavedCard";
+import { resolveCheckoutCharge } from "@/lib/booking/checkoutCharge";
+import { getSessionUserId } from "@/lib/sessionUser";
+
+/**
+ * A saved card is only ever shown to, or charged by, the customer the booking
+ * belongs to, signed in to their own account. Holding the pay link is not
+ * enough: links get forwarded, and an admin can send one to another address.
+ */
+async function getOwnerIfViewing(booking: {
+  userId: string | null;
+}): Promise<string | null> {
+  if (!booking.userId) return null;
+  const viewerId = await getSessionUserId();
+  return viewerId === booking.userId ? booking.userId : null;
+}
+
+// ── "Pay with saved card" on the customer's pay page ─────────────────────────
+//
+// The server works out the amount itself (the same calculation the card form
+// uses) and only charges if it matches what the button showed. Like the admin
+// card-on-file action, it only moves the money: the Stripe webhook records it.
 
 export async function chargeCardOnFileForCheckout({
   bookingId,
   tipCents,
+  isDepositPayment = false,
+  expectedAmountCents,
 }: {
   bookingId: string;
   tipCents?: number;
+  /** The customer chose "Pay deposit" on the pay page. */
+  isDepositPayment?: boolean;
+  /** The total on the "Pay $X" button: fare plus tip. If that is no longer
+   *  what is owed, nothing is charged. */
+  expectedAmountCents: number;
 }): Promise<
-  { success: true; last4: string; amountCents: number } | { error: string }
+  | {
+      success: true;
+      last4: string;
+      amountCents: number;
+      paymentIntentId: string;
+    }
+  | { error: string; amountDueCents?: number }
 > {
   if (!bookingId) return { error: "Missing bookingId" };
 
@@ -20,16 +56,19 @@ export async function chargeCardOnFileForCheckout({
       id: true,
       userId: true,
       guestStripeCustomerId: true,
-      totalCents: true,
-      currency: true,
       status: true,
-      payment: {
-        select: { amountPaidCents: true, status: true },
-      },
     },
   });
 
   if (!booking) return { error: "Booking not found" };
+
+  const ownerId = await getOwnerIfViewing(booking);
+  if (!ownerId) {
+    return {
+      error:
+        "Please sign in to your account to pay with a saved card, or use the card form below. Nothing was charged.",
+    };
+  }
 
   const invalidStatuses = [
     "CANCELLED",
@@ -42,140 +81,105 @@ export async function chargeCardOnFileForCheckout({
     return { error: "This booking cannot be paid." };
   }
 
-  const totalCents = Number(booking.totalCents ?? 0);
-  if (!Number.isFinite(totalCents) || totalCents <= 0) {
-    return { error: "Invalid booking total." };
+  // What this payment costs: trip-aware, deposit-aware, and checked against
+  // the total the button showed.
+  const resolved = await resolveCheckoutCharge({
+    bookingId,
+    tipCents,
+    isDepositPayment,
+    expectedAmountCents,
+  });
+  if (!resolved.ok) {
+    return { error: resolved.error, amountDueCents: resolved.amountDueCents };
   }
-
-  const amountPaidCents = Number(booking.payment?.amountPaidCents ?? 0);
-  const tip = tipCents ?? 0;
-  const amountToCharge = totalCents - amountPaidCents + tip;
-
-  if (amountToCharge <= 0) {
-    return { error: "This booking is already fully paid." };
-  }
+  const { charge } = resolved;
 
   // ── Resolve Stripe customer ID ─────────────────────────────────────────
-  // Support both registered users (via User.stripeCustomerId) and
-  // guests on charter bookings (via Booking.guestStripeCustomerId).
-  let customerId: string | null = null;
-
-  if (booking.userId) {
-    const user = await db.user.findUnique({
-      where: { id: booking.userId },
-      select: { stripeCustomerId: true },
-    });
-    customerId = user?.stripeCustomerId ?? null;
-  }
-
-  // Fall back to guest Stripe customer saved at charter checkout
-  if (!customerId) {
-    customerId = booking.guestStripeCustomerId ?? null;
-  }
+  // The customer's own Stripe record first, then one saved on the booking
+  // at charter checkout.
+  const user = await db.user.findUnique({
+    where: { id: ownerId },
+    select: { stripeCustomerId: true },
+  });
+  const customerId =
+    user?.stripeCustomerId ?? booking.guestStripeCustomerId ?? null;
 
   if (!customerId) {
     return { error: "No card on file." };
   }
 
-  const stripe = await getStripe();
-
-  const pmList = await stripe.paymentMethods.list({
-    customer: customerId,
-    type: "card",
-    limit: 10,
-  });
-
-  const now = new Date();
-  const activePm = pmList.data.find((pm) => {
-    const card = pm.card;
-    if (!card) return false;
-    const expDate = new Date(card.exp_year, card.exp_month - 1, 1);
-    return expDate >= new Date(now.getFullYear(), now.getMonth(), 1);
-  });
-
-  if (!activePm) {
-    return { error: "No active card on file." };
-  }
-
-  const currency = (booking.currency ?? "USD").toLowerCase();
-  const isBalancePayment = amountPaidCents > 0;
-
-  const pi = await stripe.paymentIntents.create({
-    amount: amountToCharge,
-    currency,
-    customer: customerId,
-    payment_method: activePm.id,
-    confirm: true,
-    off_session: true,
+  const result = await chargeSavedCard({
+    customerId,
+    amountCents: charge.amountCents,
+    currency: charge.due.currency,
+    chargeScope: billScope(charge.due),
+    previouslyPaidCents: charge.due.paidCents,
+    // Same keys the card form's PaymentIntent carries, so the webhook records
+    // both kinds of payment the same way.
     metadata: {
       bookingId: booking.id,
-      tipCents: tip.toString(),
+      tripGroupId: charge.due.tripGroupId ?? "",
+      userId: ownerId,
       kind: "CARD_ON_FILE_CHECKOUT",
-      isBalancePayment: isBalancePayment ? "true" : "false",
-      originalTotal: totalCents.toString(),
-      previouslyPaid: amountPaidCents.toString(),
+      ...charge.metadata,
+      originalTotal: charge.due.totalCents.toString(),
     },
   });
 
-  if (pi.status !== "succeeded") {
-    return {
-      error: `Payment requires additional authentication. Please use the card form below instead.`,
-    };
-  }
-
-  const newAmountPaid = amountPaidCents + amountToCharge;
-  const isFullyPaid = newAmountPaid >= totalCents;
-  const paidAt = new Date();
-
-  await db.payment.upsert({
-    where: { bookingId: booking.id },
-    create: {
-      bookingId: booking.id,
-      status: "PAID",
-      amountPaidCents: newAmountPaid,
-      tipCents: tip > 0 ? tip : undefined,
-      stripePaymentIntentId: pi.id,
-      paidAt,
-    },
-    update: {
-      status: isFullyPaid ? "PAID" : "PARTIALLY_REFUNDED",
-      amountPaidCents: newAmountPaid,
-      tipCents: tip > 0 ? tip : undefined,
-      stripePaymentIntentId: pi.id,
-      paidAt: isFullyPaid ? paidAt : undefined,
-    },
-  });
-
-  if (isFullyPaid) {
-    await db.booking.update({
-      where: { id: booking.id },
-      data: { status: "CONFIRMED" },
-    });
-
-    await db.bookingStatusEvent.create({
-      data: {
-        bookingId: booking.id,
-        status: "CONFIRMED",
-        eventType: "PAYMENT_RECEIVED",
-        metadata: {
-          amountCents: amountToCharge,
-          tipCents: tip,
-          method: "card_on_file",
-          last4: activePm.card?.last4 ?? null,
-          stripePaymentIntentId: pi.id,
-        },
-      },
-    });
+  if (!result.ok) {
+    switch (result.reason) {
+      case "stripe_unreachable":
+        return {
+          error:
+            "We couldn't reach the payment processor. Nothing was charged. Please try again.",
+        };
+      case "no_active_card":
+        return { error: "No active card on file." };
+      case "already_charged":
+        return {
+          error:
+            "This card was already charged for this booking a moment ago. Please wait a minute and refresh. You do not need to pay again.",
+        };
+      case "needs_authentication":
+        return {
+          error:
+            "Your bank needs you to approve this payment. Nothing was charged. Please use the card form below instead.",
+        };
+      case "declined":
+        return {
+          error: `${result.detail ?? "Your card was declined."} Nothing was charged. Please use the card form below instead.`,
+        };
+      default:
+        return {
+          error:
+            "We couldn't confirm this payment. Please wait a minute and refresh this page before trying again.",
+        };
+    }
   }
 
   return {
     success: true,
-    last4: activePm.card?.last4 ?? "????",
-    amountCents: amountToCharge,
+    last4: result.last4,
+    amountCents: result.amountCents,
+    paymentIntentId: result.paymentIntentId,
   };
 }
 
-// ── Read-only: get the saved card for a booking (supports guests) ─────────────
+// ── Read-only: has the webhook recorded this payment yet? ─────────────────────
+// The pay page waits on this for a few seconds before showing the receipt.
+
+export async function isCheckoutPaymentRecorded(
+  paymentIntentId: string,
+): Promise<boolean> {
+  if (!paymentIntentId) return false;
+  const row = await db.payment.findUnique({
+    where: { stripePaymentIntentId: paymentIntentId },
+    select: { id: true },
+  });
+  return Boolean(row);
+}
+
+// ── Read-only: the saved card for a booking, for its own signed-in customer ──
 
 export async function getSavedCardForBooking(bookingId: string): Promise<{
   hasCard: boolean;
@@ -193,6 +197,9 @@ export async function getSavedCardForBooking(bookingId: string): Promise<{
   });
 
   if (!booking) return null;
+
+  // Only the booking's own customer, signed in, gets to see the saved card.
+  if (!(await getOwnerIfViewing(booking))) return null;
 
   // Resolve customer ID — registered user first, then guest charter customer
   let customerId: string | null = null;
