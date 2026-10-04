@@ -1,14 +1,45 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { paymentTag, statusBadge } from "@/lib/booking/rideBadges";
+import RideBadges from "@/components/admin/RideBadges/RideBadges";
 import styles from "./BookingsPage.module.css";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { Prisma, BookingStatus, Role } from "@prisma/client";
 import Button from "@/components/shared/Button/Button";
-import CustomRangeFormClient from "./CustomRangeFormClient";
 import SearchFormClient from "./SearchFormClient";
-import ClearFiltersButton from "@/components/admin/Clearfiltersbutton/Clearfiltersbutton";
-import FilterSelectClient from "./FilterSelectClient";
 import TripGroupBadge from "@/components/admin/TripGroupBadge/TripGroupBadge";
+import BookingsChart from "./BookingsChart";
+import BookingsTimeControls from "./BookingsTimeControls";
+import BookingsFilters from "./BookingsFilters";
+import { redirect } from "next/navigation";
+import {
+  STATUS_GROUP_FILTERS,
+  buildBookingsWhere,
+  mapLegacyBookingParams,
+  type AssignmentFilter,
+  type BookingsWhereArgs,
+  type FlightFilter,
+  type PaymentFilter,
+} from "@/lib/booking/bookingsWhere";
+import CountUp from "@/components/shared/CountUp/CountUp";
+// The cards and chart reuse the earnings page's styles so both pages match.
+import earnings from "../earnings/AdminEarningsPage.module.css";
+import chartStyles from "./BookingsChart.module.css";
+import { describeRange, getRangeWindow } from "@/lib/booking/bookingsRange";
+import {
+  loadTripsForCollection,
+  summarizeCollection,
+  toCollectionRide,
+  type CollectionSummary,
+} from "@/lib/booking/rideCollection";
+import {
+  buildBookingsChart,
+  countRidesBetween,
+  safeBreakdown,
+  sameDaysLastMonth,
+  type ChartBasis,
+  type ChartRow,
+} from "@/lib/booking/bookingsChart";
 import { getCompanySettings } from "../../../../actions/admin/companySettings";
 import * as tz from "@/lib/timezone";
 import {
@@ -23,6 +54,12 @@ export const dynamic = "force-dynamic";
 
 const STATUSES = [
   "ALL",
+  // Groups, the same ones as the cards and the chart colors
+  "NEEDS_ACTION",
+  "BOOKED",
+  "DONE",
+  "LOST",
+  "STUCK",
   "PAYMENT_RECEIVED",
   "PENDING_REVIEW",
   "DECLINED",
@@ -44,10 +81,14 @@ const STATUSES = [
 const RANGES = [
   "all",
   "month",
-  "year",
+  "week",
+  "last12",
+  "ytd",
+  "year", // full calendar year; kept for existing links (no tab of its own)
   "today",
   "next24",
   "next7",
+  "upcoming",
   "range",
 ] as const;
 
@@ -74,6 +115,8 @@ type SearchParams = {
   status?: StatusFilter;
   range?: RangeFilter;
   q?: string;
+  // Old checkbox params: redirected to payment / assignment / flight /
+  // status / range by mapLegacyBookingParams.
   unassigned?: "1";
   assigned?: "1";
   paid?: "1";
@@ -88,44 +131,16 @@ type SearchParams = {
   page?: string;
   customerType?: "all" | "guest" | "account" | "corporate";
   driver?: string;
+  basis?: "created";
+  breakdown?: string;
+  /** YYYY-MM for the Daily view; omitted for the current month. */
+  month?: string;
+  payment?: string;
+  assignment?: string;
+  flight?: string;
 };
 
-type BadgeTone = "neutral" | "warn" | "good" | "accent" | "bad";
-
-const PAGE_SIZE = 10;
-
-function parseYMD(s: string | null | undefined) {
-  if (!s) return null;
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s).trim());
-  if (!match) return null;
-  const y = Number(match[1]);
-  const m = Number(match[2]);
-  const d = Number(match[3]);
-  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d))
-    return null;
-  if (m < 1 || m > 12 || d < 1 || d > 31) return null;
-  return { y, m, d };
-}
-
-function startOfDayFromYMD(
-  ymd: { y: number; m: number; d: number },
-  timezone: string,
-) {
-  const iso = `${ymd.y}-${String(ymd.m).padStart(2, "0")}-${String(ymd.d).padStart(2, "0")}`;
-  return new Date(tz.localToUtcIso(iso, "00:00", timezone));
-}
-
-function startOfYear(dateUtc: Date, timezone: string) {
-  const { y } = tz.toLocalParts(dateUtc, timezone);
-  const iso = `${y}-01-01`;
-  return new Date(tz.localToUtcIso(iso, "00:00", timezone));
-}
-
-function startOfNextYear(yearStartUtc: Date, timezone: string) {
-  const { y } = tz.toLocalParts(yearStartUtc, timezone);
-  const iso = `${y + 1}-01-01`;
-  return new Date(tz.localToUtcIso(iso, "00:00", timezone));
-}
+const PAGE_SIZE = 25;
 
 function getConfirmationCode(bookingId: string): string {
   return bookingId.slice(0, 8).toUpperCase();
@@ -152,47 +167,22 @@ function clampPage(raw: string | undefined) {
   return Math.floor(n);
 }
 
-function statusLabel(status: BookingStatus) {
-  switch (status) {
-    case "PENDING_REVIEW":
-      return "Pending review";
-    case "DECLINED":
-      return "Declined";
-    case "PENDING_PAYMENT":
-      return "Payment due";
-    case "CONFIRMED":
-      return "Confirmed";
-    case "ASSIGNED":
-      return "Driver assigned";
-    case "EN_ROUTE":
-      return "Driver en route";
-    case "ARRIVED":
-      return "Driver arrived";
-    case "IN_PROGRESS":
-      return "In progress";
-    case "COMPLETED":
-      return "Completed";
-    case "CANCELLED":
-      return "Cancelled";
-    case "NO_SHOW":
-      return "No-show";
-    case "REFUNDED":
-      return "Refunded";
-    case "PARTIALLY_REFUNDED":
-      return "Partially refunded";
-    case "DRAFT":
-      return "Draft";
-    default:
-      return String(status).replaceAll("_", " ");
-  }
-}
-
 function statusTabLabel(status: StatusFilter): string {
   switch (status) {
     case "TRASH":
       return "Trash";
     case "ALL":
       return "All";
+    case "NEEDS_ACTION":
+      return "Needs action";
+    case "BOOKED":
+      return "Booked";
+    case "DONE":
+      return "Done";
+    case "LOST":
+      return "Lost";
+    case "STUCK":
+      return "Stuck in review";
     case "PAYMENT_RECEIVED":
       return "Payment Received";
     case "PENDING_REVIEW":
@@ -226,20 +216,6 @@ function statusTabLabel(status: StatusFilter): string {
     default:
       return String(status).replaceAll("_", " ");
   }
-}
-
-function badgeTone(status: BookingStatus): BadgeTone {
-  if (status === "PENDING_PAYMENT") return "warn";
-  if (status === "PENDING_REVIEW" || status === "DRAFT") return "neutral";
-  if (status === "DECLINED") return "bad";
-  if (status === "CONFIRMED" || status === "ASSIGNED") return "good";
-  if (status === "EN_ROUTE" || status === "ARRIVED" || status === "IN_PROGRESS")
-    return "accent";
-  if (status === "CANCELLED" || status === "NO_SHOW") return "bad";
-  if (status === "COMPLETED") return "good";
-  if (status === "REFUNDED" || status === "PARTIALLY_REFUNDED")
-    return "neutral";
-  return "neutral";
 }
 
 type BookingRow = Prisma.BookingGetPayload<{
@@ -281,222 +257,83 @@ function safeCustomerType(v: any): "all" | "guest" | "account" | "corporate" {
   const valid = ["all", "guest", "account", "corporate"];
   return valid.includes(v) ? v : "all";
 }
-
-function buildWhere(args: {
-  now: Date;
-  timezone: string;
-  status: StatusFilter;
-  range: RangeFilter;
-  unassigned: boolean;
-  assigned: boolean;
-  paid: boolean;
-  unpaid: boolean;
-  stuck: boolean;
-  completed: boolean;
-  future: boolean;
-  fromYmd: string;
-  toYmd: string;
-  q?: string;
-  customerType?: string;
-  driver?: string;
-  serviceType?: string;
-  rideType?: string;
-  flightInfo?: boolean;
+const MONTH_OPTIONS = [
+  { v: "01", label: "Jan" },
+  { v: "02", label: "Feb" },
+  { v: "03", label: "Mar" },
+  { v: "04", label: "Apr" },
+  { v: "05", label: "May" },
+  { v: "06", label: "Jun" },
+  { v: "07", label: "Jul" },
+  { v: "08", label: "Aug" },
+  { v: "09", label: "Sep" },
+  { v: "10", label: "Oct" },
+  { v: "11", label: "Nov" },
+  { v: "12", label: "Dec" },
+];
+/** Same markup and styles as the earnings page's KPI cards. */
+function KpiCard({
+  label,
+  value,
+  sub,
+  prefix,
+  tone = "neutral",
+  href,
+  active = false,
+}: {
+  label: string;
+  value: number;
+  sub: string;
+  prefix?: string;
+  tone?: "neutral" | "good" | "warn" | "tip" | "bad";
+  /** Makes the card a filter: clicking it opens this link. */
+  href?: string;
+  /** This card's filter is the one applied. */
+  active?: boolean;
 }) {
-  const { now, timezone, status, range, paid, stuck, fromYmd, toYmd, q } = args;
-
-  const where: Prisma.BookingWhereInput = {};
-
-  // Trash pseudo-status: only soft-deleted rows, no other filters.
-  // Mentioning deletedAt here also bypasses the global soft-delete guard.
-  if (status === "TRASH") {
-    where.deletedAt = { not: null };
-    return where;
-  }
-
-  const todayStart = tz.startOfDay(now, timezone);
-  const tomorrowStart = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
-
-  const next24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-  const next7d = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-  const monthStart = tz.startOfMonth(now, timezone);
-  const nextMonthStart = tz.addMonths(monthStart, 1, timezone);
-
-  const yearStart = startOfYear(now, timezone);
-  const nextYearStart = startOfNextYear(yearStart, timezone);
-
-  let pickupAtFilter: Prisma.DateTimeFilter | undefined;
-
-  if (range === "today")
-    pickupAtFilter = { gte: todayStart, lt: tomorrowStart };
-  if (range === "next24") pickupAtFilter = { gte: now, lt: next24h };
-  if (range === "next7") pickupAtFilter = { gte: now, lt: next7d };
-  if (range === "month")
-    pickupAtFilter = { gte: monthStart, lt: nextMonthStart };
-  if (range === "year") pickupAtFilter = { gte: yearStart, lt: nextYearStart };
-  // "all" intentionally sets no date filter
-
-  if (range === "range") {
-    const f = parseYMD(fromYmd);
-    const t = parseYMD(toYmd);
-
-    let fromUtc = f ? startOfDayFromYMD(f, timezone) : todayStart;
-    const toUtc0 = t ? startOfDayFromYMD(t, timezone) : todayStart;
-
-    let toUtc = new Date(toUtc0.getTime() + 24 * 60 * 60 * 1000);
-
-    if (toUtc.getTime() < fromUtc.getTime()) {
-      const tmp = fromUtc;
-      fromUtc = toUtc0;
-      toUtc = new Date(tmp.getTime() + 24 * 60 * 60 * 1000);
-    }
-
-    pickupAtFilter = { gte: fromUtc, lt: toUtc };
-  }
-
-  if (pickupAtFilter) where.pickupAt = pickupAtFilter;
-
-  if (status === "PAYMENT_RECEIVED") {
-    where.status = { in: ["CONFIRMED", "PENDING_PAYMENT"] as BookingStatus[] };
-    where.payment = { is: { status: "PAID" } };
-  } else if (status !== "ALL") {
-    where.status = status as BookingStatus;
-  }
-  // Pay filters (mutually exclusive)
-  if (paid) {
-    where.payment = { is: { status: "PAID" } };
-  } else if (args.unpaid) {
-    where.NOT = { payment: { status: "PAID" } };
-  }
-
-  if (stuck) {
-    const stuckCutoff = new Date(now.getTime() - 2 * 60 * 60 * 1000);
-    where.status = "PENDING_REVIEW";
-    where.createdAt = { lt: stuckCutoff };
-    where.pickupAt = { gte: now };
-  }
-
-  const needle = (q ?? "").trim();
-  if (needle) {
-    const isConfirmationCode = /^[A-Za-z0-9]{6,8}$/i.test(needle);
-
-    const existingAnd = Array.isArray(where.AND)
-      ? where.AND
-      : where.AND
-        ? [where.AND]
-        : [];
-
-    const searchConditions: Prisma.BookingWhereInput[] = [
-      { id: { contains: needle, mode: "insensitive" } },
-      { guestName: { contains: needle, mode: "insensitive" } },
-      { guestEmail: { contains: needle, mode: "insensitive" } },
-      { guestPhone: { contains: needle, mode: "insensitive" } },
-      { pickupAddress: { contains: needle, mode: "insensitive" } },
-      { dropoffAddress: { contains: needle, mode: "insensitive" } },
-      { user: { is: { name: { contains: needle, mode: "insensitive" } } } },
-      { user: { is: { email: { contains: needle, mode: "insensitive" } } } },
-      {
-        corporateAccount: {
-          is: { name: { contains: needle, mode: "insensitive" } },
-        },
-      },
-      {
-        corporatePassenger: {
-          is: { name: { contains: needle, mode: "insensitive" } },
-        },
-      },
-      {
-        corporatePassenger: {
-          is: { email: { contains: needle, mode: "insensitive" } },
-        },
-      },
-      {
-        corporatePassenger: {
-          is: { phone: { contains: needle, mode: "insensitive" } },
-        },
-      },
-      { costCenter: { contains: needle, mode: "insensitive" } },
-      { projectCode: { contains: needle, mode: "insensitive" } },
-    ];
-
-    if (isConfirmationCode) {
-      searchConditions.push({
-        id: { startsWith: needle.toLowerCase(), mode: "insensitive" },
-      });
-    }
-
-    where.AND = [
-      ...existingAnd,
-      {
-        OR: searchConditions,
-      },
-    ];
-  }
-
-  // Customer type filter
-  const ct = args.customerType ?? "all";
-  if (ct === "guest") {
-    where.userId = null;
-    where.corporateAccountId = null;
-  } else if (ct === "account") {
-    where.userId = { not: null };
-    where.corporateAccountId = null;
-  } else if (ct === "corporate") {
-    where.corporateAccountId = { not: null };
-  }
-
-  // Trip quick filters (completed / future override range + status)
-  if (args.completed) {
-    where.status = "COMPLETED" as BookingStatus;
-    delete where.pickupAt;
-  }
-
-  if (args.future) {
-    where.pickupAt = { gte: args.now };
-    where.status = {
-      notIn: [
-        "COMPLETED",
-        "CANCELLED",
-        "REFUNDED",
-        "PARTIALLY_REFUNDED",
-        "NO_SHOW",
-      ] as BookingStatus[],
-    };
-  }
-
-  // Assignment filters (driver > unassigned > assigned)
-  const drvFilter = args.driver ?? "all";
-  if (drvFilter !== "all") {
-    where.assignment = { driverId: drvFilter };
-  } else if (args.unassigned) {
-    where.assignment = { is: null };
-  } else if (args.assigned) {
-    where.assignment = { isNot: null };
-  }
-
-  if (args.serviceType && args.serviceType !== "all") {
-    where.serviceTypeId = args.serviceType;
-  }
-
-  if (args.rideType === "single") {
-    where.tripGroupId = null;
-  } else if (args.rideType === "multi") {
-    where.tripGroupId = { not: null };
-  }
-
-  if (args.flightInfo) {
-    where.flightNumber = { not: null };
-  }
-
-  return where;
+  const toneClass =
+    tone === "bad" ? chartStyles.tone_bad : earnings[`tone_${tone}`];
+  const card = (
+    <div
+      className={[
+        earnings.kpiCard,
+        toneClass ?? "",
+        href ? chartStyles.kpiLink : "",
+        active ? chartStyles.kpiActive : "",
+      ].join(" ")}
+    >
+      <div className={earnings.kpiTop}>
+        <div className='emptyTitle underline'>{label}</div>
+      </div>
+      <div className={earnings.kpiValue}>
+        {prefix ? <span>{prefix}</span> : null}
+        <CountUp from={0} to={value} duration={1.5} separator=',' delay={0.1} />
+      </div>
+      <div className='miniNote'>{sub}</div>
+    </div>
+  );
+  if (!href) return card;
+  return (
+    <Link
+      href={href}
+      scroll={false}
+      className={chartStyles.kpiAnchor}
+      aria-current={active ? "true" : undefined}
+      title={
+        active
+          ? "Showing these bookings. Click to show all."
+          : "Show these bookings"
+      }
+    >
+      {card}
+    </Link>
+  );
 }
 
 function buildOrderBy(
   sort: SortColumn | undefined,
   order: SortOrder,
   status: StatusFilter,
-  stuck: boolean,
 ): Prisma.BookingOrderByWithRelationInput[] {
   if (sort) {
     const direction =
@@ -526,10 +363,10 @@ function buildOrderBy(
     }
   }
 
-  if (stuck || status === "PENDING_REVIEW") {
+  if (status === "STUCK" || status === "PENDING_REVIEW") {
     return [{ createdAt: Prisma.SortOrder.asc }];
   }
-  if (status === "ALL") {
+  if (status === "ALL" || status === "DONE" || status === "LOST") {
     return [{ pickupAt: Prisma.SortOrder.desc }];
   }
   if (
@@ -549,6 +386,12 @@ export default async function AdminBookingsPage({
 }) {
   const sp = await searchParams;
 
+  // Old bookmarks (?paid=1, ?stuck=1, …) open the same view in the new filters.
+  const legacyParams = mapLegacyBookingParams(
+    sp as Record<string, string | undefined>,
+  );
+  if (legacyParams) redirect(buildHref("/admin/bookings", legacyParams));
+
   const status = safeStatus(sp.status) as StatusFilter;
   // When searching, default to all-time so results aren't hidden by date range
   const range = safeRange(
@@ -558,18 +401,38 @@ export default async function AdminBookingsPage({
   const order = safeOrder(sp.order);
   const customerType = safeCustomerType(sp.customerType);
 
-  const unassigned = sp.unassigned === "1";
-  const assigned = (sp as any).assigned === "1";
-  const paid = sp.paid === "1";
-  const unpaid = (sp as any).unpaid === "1";
-  const stuck = sp.stuck === "1";
-  const completed = (sp as any).completed === "1";
-  const future = (sp as any).future === "1";
+  const payment: PaymentFilter =
+    sp.payment === "paid" || sp.payment === "unpaid" ? sp.payment : "any";
+  const assignment: AssignmentFilter =
+    sp.assignment === "assigned" || sp.assignment === "unassigned"
+      ? sp.assignment
+      : "any";
+  const flight: FlightFilter =
+    sp.flight === "yes" || sp.flight === "no" ? sp.flight : "any";
+  const serviceTypeFilter = (sp as any).serviceType ?? "all";
+  const rideTypeFilter = (sp as any).rideType ?? "all";
   const page = clampPage(sp.page);
+
+  // "Booked date" filters by when bookings were made, so it only applies to
+  // ranges that look back in time.
+  const basis: ChartBasis =
+    sp.basis === "created" &&
+    range !== "next24" &&
+    range !== "next7" &&
+    range !== "upcoming"
+      ? "created"
+      : "pickup";
+  const dateField: "pickupAt" | "createdAt" =
+    basis === "created" ? "createdAt" : "pickupAt";
+  const breakdown = safeBreakdown(sp.breakdown);
+  const monthParam =
+    sp.month && /^\d{4}-(0[1-9]|1[0-2])$/.test(sp.month) ? sp.month : undefined;
 
   const q = (sp.q ?? "").trim();
   const now = new Date();
   const { timezone: companyTz } = await getCompanySettings();
+  const currentMonthKey = tz.monthKey(now, companyTz);
+  const selectedMonthKey = monthParam ?? currentMonthKey;
 
   const defaultFrom = tz.formatIsoDate(now, companyTz);
   const defaultTo = tz.formatIsoDate(now, companyTz);
@@ -605,28 +468,26 @@ export default async function AdminBookingsPage({
   const driverFilter = (sp as any).driver ?? "all";
   const isDriverSelected = driverFilter !== "all";
 
-  const where = buildWhere({
+  const whereArgs: BookingsWhereArgs = {
     now,
     timezone: companyTz,
     status,
     range,
-    unassigned,
-    assigned,
-    paid,
-    unpaid,
-    stuck,
-    completed,
-    future,
     fromYmd,
     toYmd,
     q,
     customerType,
     driver: driverFilter,
-    serviceType: (sp as any).serviceType ?? "all",
-    rideType: (sp as any).rideType ?? "all",
-    flightInfo: (sp as any).flightInfo === "1",
-  });
-  const orderBy = buildOrderBy(sort, order, status, stuck);
+    serviceType: serviceTypeFilter,
+    rideType: rideTypeFilter,
+    payment,
+    assignment,
+    flight,
+    dateField,
+    monthKey: selectedMonthKey,
+  };
+  const where = buildBookingsWhere(whereArgs);
+  const orderBy = buildOrderBy(sort, order, status);
 
   const totalCount = await db.booking.count({ where });
 
@@ -656,6 +517,8 @@ export default async function AdminBookingsPage({
       tripGroup: {
         select: {
           legCount: true,
+          paymentStatus: true,
+          amountPaidCents: true,
           bookings: {
             select: { id: true },
             orderBy: { pickupAt: "asc" },
@@ -668,109 +531,63 @@ export default async function AdminBookingsPage({
     take: PAGE_SIZE,
   });
 
-  // ── Count helper (each count computed independently of other checkbox filters) ──
-
-  async function countFor(next: {
-    status?: StatusFilter;
-    range?: RangeFilter;
-    unassigned?: boolean;
-    assigned?: boolean;
-    paid?: boolean;
-    unpaid?: boolean;
-    stuck?: boolean;
-    completed?: boolean;
-    future?: boolean;
-    fromYmd?: string;
-    toYmd?: string;
-    q?: string;
-    customerType?: string;
-    driver?: string;
-    serviceType?: string;
-    rideType?: string;
-    flightInfo?: boolean;
-  }) {
-    const w = buildWhere({
-      now,
-      timezone: companyTz,
-      status: next.status ?? status,
-      range: next.range ?? range,
-      unassigned:
-        typeof next.unassigned === "boolean" ? next.unassigned : false,
-      assigned: typeof next.assigned === "boolean" ? next.assigned : false,
-      paid: typeof next.paid === "boolean" ? next.paid : false,
-      unpaid: typeof next.unpaid === "boolean" ? next.unpaid : false,
-      stuck: typeof next.stuck === "boolean" ? next.stuck : false,
-      completed: typeof next.completed === "boolean" ? next.completed : false,
-      future: typeof next.future === "boolean" ? next.future : false,
-      fromYmd: next.fromYmd ?? fromYmd,
-      toYmd: next.toYmd ?? toYmd,
-      q: next.q ?? q,
-      customerType: next.customerType ?? customerType,
-      driver: next.driver ?? driverFilter,
-      serviceType: next.serviceType ?? (sp as any).serviceType ?? "all",
-      rideType: next.rideType ?? (sp as any).rideType ?? "all",
-      flightInfo:
-        typeof next.flightInfo === "boolean" ? next.flightInfo : false,
+  // ── Counts for each filter option: the current period and every other
+  // filter applied, with just that one filter changed ──
+  function countFor(next: Partial<BookingsWhereArgs>) {
+    return db.booking.count({
+      where: buildBookingsWhere({ ...whereArgs, ...next }),
     });
-    return db.booking.count({ where: w });
   }
+  const PAYMENT_VALUES = ["any", "paid", "unpaid"] as const;
+  const ASSIGNMENT_VALUES = ["any", "assigned", "unassigned"] as const;
+  const FLIGHT_VALUES = ["any", "yes", "no"] as const;
 
   const [
     statusCountsArr,
-    rangeCountsArr,
-    futureCount,
-    completedCount,
-    stuckCount,
-    paidCount,
-    unpaidCount,
-    assignedCount,
-    unassignedCount,
-    flightInfoCount,
+    paymentCountsArr,
+    assignmentCountsArr,
+    flightCountsArr,
   ] = await Promise.all([
     Promise.all(
-      STATUSES.map(async (s) => {
-        const c =
-          s === "ALL"
-            ? await countFor({ status: "ALL", q })
-            : await countFor({ status: s, q });
-        return [s, c] as const;
-      }),
+      STATUSES.map(async (s) => [s, await countFor({ status: s })] as const),
     ),
     Promise.all(
-      RANGES.map(async (r) => {
-        const c = await countFor({ range: r, q });
-        return [r, c] as const;
-      }),
+      PAYMENT_VALUES.map(
+        async (v) => [v, await countFor({ payment: v })] as const,
+      ),
     ),
-    countFor({ future: true, q }),
-    countFor({ completed: true, q }),
-    countFor({ stuck: true, q }),
-    countFor({ paid: true, q }),
-    countFor({ unpaid: true, q }),
-    countFor({ assigned: true, q }),
-    countFor({ unassigned: true, q }),
-    countFor({ flightInfo: true, q }),
+    Promise.all(
+      ASSIGNMENT_VALUES.map(
+        async (v) => [v, await countFor({ assignment: v })] as const,
+      ),
+    ),
+    Promise.all(
+      FLIGHT_VALUES.map(
+        async (v) => [v, await countFor({ flight: v })] as const,
+      ),
+    ),
   ]);
 
   const statusCounts = Object.fromEntries(statusCountsArr) as Record<
     StatusFilter,
     number
   >;
-  const rangeCounts = Object.fromEntries(rangeCountsArr) as Record<
-    RangeFilter,
+  const paymentCounts = Object.fromEntries(paymentCountsArr) as Record<
+    PaymentFilter,
+    number
+  >;
+  const assignmentCounts = Object.fromEntries(assignmentCountsArr) as Record<
+    AssignmentFilter,
+    number
+  >;
+  const flightCounts = Object.fromEntries(flightCountsArr) as Record<
+    FlightFilter,
     number
   >;
 
   const baseParams: Record<string, string | undefined> = {
     status: status === "ALL" ? "ALL" : status,
     range: range === "month" ? undefined : range,
-    unassigned: unassigned ? "1" : undefined,
-    assigned: assigned ? "1" : undefined,
-    paid: paid ? "1" : undefined,
-    unpaid: unpaid ? "1" : undefined,
-    stuck: stuck ? "1" : undefined,
-    completed: completed ? "1" : undefined,
-    future: future ? "1" : undefined,
     from: range === "range" ? fromYmd : undefined,
     to: range === "range" ? toYmd : undefined,
     q: q.length ? q : undefined,
@@ -778,31 +595,170 @@ export default async function AdminBookingsPage({
     order: sort ? order : undefined,
     customerType: customerType !== "all" ? customerType : undefined,
     driver: driverFilter !== "all" ? driverFilter : undefined,
-    serviceType:
-      (sp as any).serviceType !== "all" ? (sp as any).serviceType : undefined,
-    rideType: (sp as any).rideType !== "all" ? (sp as any).rideType : undefined,
-    flightInfo: (sp as any).flightInfo === "1" ? "1" : undefined,
+    serviceType: serviceTypeFilter !== "all" ? serviceTypeFilter : undefined,
+    rideType: rideTypeFilter !== "all" ? rideTypeFilter : undefined,
+    payment: payment !== "any" ? payment : undefined,
+    assignment: assignment !== "any" ? assignment : undefined,
+    flight: flight !== "any" ? flight : undefined,
+    basis: basis === "created" ? "created" : undefined,
+    breakdown: breakdown !== "status" ? breakdown : undefined,
+    month: range === "month" ? monthParam : undefined,
   };
 
+  // Which-bookings filters (and search). "Clear filters" resets these and
+  // keeps the time view.
   const hasActiveFilters =
     status !== "ALL" ||
-    range !== "month" ||
-    unassigned ||
-    assigned ||
-    paid ||
-    unpaid ||
-    stuck ||
-    completed ||
-    future ||
-    q.length > 0 ||
-    sort !== undefined ||
     customerType !== "all" ||
-    isDriverSelected;
+    isDriverSelected ||
+    serviceTypeFilter !== "all" ||
+    rideTypeFilter !== "all" ||
+    payment !== "any" ||
+    assignment !== "any" ||
+    flight !== "any" ||
+    q.length > 0;
 
   const pageParams: Record<string, string | undefined> = {
     ...baseParams,
     page: safePage > 1 ? String(safePage) : undefined,
   };
+
+  // ── Time controls, cards and chart: all driven by the filters above ──
+  // All time and Upcoming have no fixed end, so the chart fits to the data.
+  const fitToData = range === "all" || range === "upcoming";
+  const win = getRangeWindow({
+    now,
+    timezone: companyTz,
+    range,
+    fromYmd,
+    toYmd,
+    monthKey: selectedMonthKey,
+  });
+  const rangeLabel = describeRange({
+    range,
+    win,
+    now,
+    timezone: companyTz,
+  });
+
+  const bounds = await db.booking.aggregate({
+    _min: { pickupAt: true, createdAt: true },
+    _max: { pickupAt: true },
+  });
+  const thisYear = tz.toLocalParts(now, companyTz).y;
+  const firstYear = Math.min(
+    thisYear,
+    bounds._min.pickupAt
+      ? tz.toLocalParts(bounds._min.pickupAt, companyTz).y
+      : thisYear,
+    bounds._min.createdAt
+      ? tz.toLocalParts(bounds._min.createdAt, companyTz).y
+      : thisYear,
+  );
+  const lastYear = Math.max(
+    thisYear + 1,
+    bounds._max.pickupAt
+      ? tz.toLocalParts(bounds._max.pickupAt, companyTz).y
+      : thisYear,
+  );
+  const years = Array.from({ length: lastYear - firstYear + 1 }, (_, i) =>
+    String(firstYear + i),
+  );
+
+  let chartData: ReturnType<typeof buildBookingsChart> | null = null;
+  let collection: CollectionSummary | null = null;
+  let ridesSub = rangeLabel;
+  if (status !== "TRASH" && status !== "DRAFT") {
+    const raw = await db.booking.findMany({
+      where: { AND: [where, { status: { not: "DRAFT" as BookingStatus } }] },
+      select: {
+        id: true,
+        status: true,
+        pickupAt: true,
+        createdAt: true,
+        tripGroupId: true,
+        totalCents: true,
+        userId: true,
+        corporateAccountId: true,
+        serviceType: { select: { id: true, name: true } },
+        vehicle: { select: { id: true, name: true } },
+        assignment: {
+          select: { driver: { select: { id: true, name: true, email: true } } },
+        },
+        payment: {
+          select: { amountPaidCents: true, amountRefundedCents: true },
+        },
+      },
+    });
+    const chartRows: ChartRow[] = raw.map((b) => ({
+      id: b.id,
+      status: b.status,
+      pickupAt: b.pickupAt,
+      createdAt: b.createdAt,
+      tripGroupId: b.tripGroupId,
+      totalCents: b.totalCents,
+      userId: b.userId,
+      corporateAccountId: b.corporateAccountId,
+      serviceType: b.serviceType ?? null,
+      vehicle: b.vehicle ?? null,
+      driver: b.assignment?.driver
+        ? {
+            id: b.assignment.driver.id,
+            name: b.assignment.driver.name?.trim() || b.assignment.driver.email,
+          }
+        : null,
+    }));
+
+    // Paid toward these same rides (whenever it was paid), trip-aware.
+    collection = summarizeCollection(
+      raw.map(toCollectionRide),
+      await loadTripsForCollection(raw.map((b) => b.tripGroupId)),
+    );
+
+    chartData = buildBookingsChart({
+      rows: chartRows,
+      now,
+      timeZone: companyTz,
+      range,
+      basis,
+      breakdown,
+      window: !fitToData && win?.lt ? { start: win.gte, end: win.lt } : null,
+    });
+
+    // Current month: how the month is going against the same days last month.
+    if (
+      range === "month" &&
+      selectedMonthKey === currentMonthKey &&
+      !fitToData
+    ) {
+      const sd = sameDaysLastMonth(now, companyTz);
+      const lastWhere = buildBookingsWhere({
+        ...whereArgs,
+        range: "range",
+        fromYmd: sd.lastFromYmd,
+        toYmd: sd.lastToYmd,
+      });
+      const lastRides = await db.booking.count({
+        where: {
+          AND: [lastWhere, { status: { not: "DRAFT" as BookingStatus } }],
+        },
+      });
+      const soFar = countRidesBetween(
+        chartRows,
+        basis,
+        companyTz,
+        sd.thisFromYmd,
+        sd.thisToYmd,
+      );
+      ridesSub = `So far ${soFar} · same days last month ${lastRides}`;
+    }
+  }
+
+  const cardHref = (value: string) =>
+    buildHref("/admin/bookings", {
+      ...baseParams,
+      status: status === value ? "ALL" : value,
+    });
 
   return (
     <section className={styles.container} aria-label='Bookings'>
@@ -811,7 +767,6 @@ export default async function AdminBookingsPage({
           <div className={styles.top}>
             <h1 className={`${styles.heading} h2`}>Bookings</h1>
           </div>
-
           <div className={styles.headerActions}>
             <Button
               href='/admin/bookings/new'
@@ -819,158 +774,199 @@ export default async function AdminBookingsPage({
               btnType='greenReg'
             />
           </div>
-
-          <div className={styles.meta}>
-            <strong style={{ fontSize: "1.4rem" }}>{totalCount}</strong> total
-            {totalCount > 0 ? (
-              <span className={styles.metaSep}>
-                • Page <strong className='emptyTitleSmall'>{safePage}</strong>{" "}
-                of <strong className='emptyTitleSmall'>{totalPages}</strong>
-              </span>
-            ) : null}
-          </div>
         </div>
 
-        <div className={styles.filters}>
-          {/* Dropdown row: Time · Status · Customer type · Driver */}
-          <div className={styles.filterRow}>
-            <FilterSelectClient
-              label='Time'
-              paramName='range'
-              defaultValue='month'
-              current={baseParams}
-              options={[
-                {
-                  value: "all",
-                  label: "All time",
-                  count: rangeCounts.all,
-                },
-                {
-                  value: "month",
-                  label: "Current month",
-                  count: rangeCounts.month,
-                },
-                {
-                  value: "year",
-                  label: "Current year",
-                  count: rangeCounts.year,
-                },
-                {
-                  value: "today",
-                  label: "Today",
-                  count: rangeCounts.today,
-                },
-                {
-                  value: "next24",
-                  label: "Next 24h",
-                  count: rangeCounts.next24,
-                },
-                {
-                  value: "next7",
-                  label: "Next 7 days",
-                  count: rangeCounts.next7,
-                },
-                {
-                  value: "range",
-                  label: "Custom range",
-                },
-              ]}
-            />
+        <BookingsTimeControls
+          activeRange={range}
+          basis={basis}
+          years={years}
+          monthOptions={MONTH_OPTIONS}
+          selectedYear={selectedMonthKey.slice(0, 4)}
+          selectedMonth={selectedMonthKey.slice(5, 7)}
+          currentMonthKey={currentMonthKey}
+          from={fromYmd}
+          to={toYmd}
+          rangeLabel={rangeLabel}
+        />
 
-            <FilterSelectClient
-              label='Status'
-              paramName='status'
-              defaultValue='ALL'
-              current={baseParams}
-              options={STATUSES.map((s) => ({
-                value: s,
-                label: statusTabLabel(s),
-                count: statusCounts[s],
-              }))}
-            />
-
-            <FilterSelectClient
-              label='Customer type'
-              paramName='customerType'
-              defaultValue='all'
-              current={baseParams}
-              options={[
-                { value: "all", label: "All customers" },
-                { value: "guest", label: "Guest" },
-                { value: "account", label: "Account" },
-                { value: "corporate", label: "Corporate" },
-              ]}
-            />
-
-            <FilterSelectClient
-              label='Driver'
-              paramName='driver'
-              defaultValue='all'
-              current={baseParams}
-              options={driverFilterOptions}
-            />
-
-            <FilterSelectClient
-              label='Service'
-              paramName='serviceType'
-              defaultValue='all'
-              current={baseParams}
-              options={serviceTypeFilterOptions}
-            />
-
-            <FilterSelectClient
-              label='Ride Type'
-              paramName='rideType'
-              defaultValue='all'
-              current={baseParams}
-              options={[
-                { value: "all", label: "All ride types" },
-                { value: "single", label: "Single Ride" },
-                { value: "multi", label: "Multi Trip" },
-              ]}
-            />
-          </div>
-
-          {/* Custom date range */}
-          {range === "range" ? (
-            <CustomRangeFormClient
-              current={baseParams}
-              defaultFrom={defaultFrom}
-              defaultTo={defaultTo}
-            />
-          ) : null}
-
-          {/* Checkbox filter sections */}
-          <FilterCheckboxSections
-            current={baseParams}
-            isDriverSelected={isDriverSelected}
-            counts={{
-              future: futureCount,
-              completed: completedCount,
-              stuck: stuckCount,
-              paid: paidCount,
-              unpaid: unpaidCount,
-              assigned: assignedCount,
-              unassigned: unassignedCount,
-              flightInfo: flightInfoCount,
-            }}
-          />
-
-          {/* Clear All Filters */}
-          <div className={styles.filterGroup}>
-            <ClearFiltersButton hasActiveFilters={hasActiveFilters} />
-          </div>
-        </div>
+        <BookingsFilters
+          values={{
+            status,
+            customerType,
+            driver: driverFilter,
+            serviceType: serviceTypeFilter,
+            rideType: rideTypeFilter,
+            payment,
+            assignment,
+            flight,
+          }}
+          statusGroups={[
+            {
+              options: [
+                { value: "ALL", label: "All", count: statusCounts.ALL },
+              ],
+            },
+            {
+              label: "Groups",
+              options: (
+                ["NEEDS_ACTION", "BOOKED", "DONE", "LOST", "STUCK"] as const
+              ).map((v) => ({
+                value: v,
+                label: statusTabLabel(v),
+                count: statusCounts[v],
+              })),
+            },
+            {
+              label: "Statuses",
+              options: STATUSES.filter(
+                (v) =>
+                  v !== "ALL" &&
+                  v !== "STUCK" &&
+                  v !== "DRAFT" &&
+                  v !== "TRASH" &&
+                  !STATUS_GROUP_FILTERS[v],
+              ).map((v) => ({
+                value: v,
+                label: statusTabLabel(v),
+                count: statusCounts[v],
+              })),
+            },
+            {
+              label: "Other",
+              options: (["DRAFT", "TRASH"] as const).map((v) => ({
+                value: v,
+                label: v === "DRAFT" ? "Drafts" : "Trash",
+                count: statusCounts[v],
+              })),
+            },
+          ]}
+          customerOptions={[
+            { value: "all", label: "All customers" },
+            { value: "guest", label: "Guest" },
+            { value: "account", label: "Account" },
+            { value: "corporate", label: "Corporate" },
+          ]}
+          driverOptions={driverFilterOptions}
+          serviceOptions={serviceTypeFilterOptions}
+          rideOptions={[
+            { value: "all", label: "All ride types" },
+            { value: "single", label: "Single Ride" },
+            { value: "multi", label: "Multi Trip" },
+          ]}
+          paymentOptions={[
+            { value: "any", label: "Any", count: paymentCounts.any },
+            { value: "paid", label: "Paid", count: paymentCounts.paid },
+            { value: "unpaid", label: "Unpaid", count: paymentCounts.unpaid },
+          ]}
+          assignmentOptions={[
+            { value: "any", label: "Any", count: assignmentCounts.any },
+            {
+              value: "assigned",
+              label: "Assigned",
+              count: assignmentCounts.assigned,
+            },
+            {
+              value: "unassigned",
+              label: "Unassigned",
+              count: assignmentCounts.unassigned,
+            },
+          ]}
+          flightOptions={[
+            { value: "any", label: "Any", count: flightCounts.any },
+            { value: "yes", label: "Has flight info", count: flightCounts.yes },
+            { value: "no", label: "No flight info", count: flightCounts.no },
+          ]}
+          hasActive={hasActiveFilters}
+        />
 
         <SearchFormClient current={baseParams} defaultValue={q} />
-
-        <Pagination
-          totalCount={totalCount}
-          page={safePage}
-          totalPages={totalPages}
-          current={pageParams}
-        />
       </header>
+
+      {chartData ? (
+        <div className={chartStyles.kpiSection}>
+          <div className={earnings.kpiGrid}>
+            <KpiCard
+              label='Rides'
+              href={buildHref("/admin/bookings", {
+                ...baseParams,
+                status: "ALL",
+              })}
+              active={status === "ALL"}
+              value={chartData.summary.rides}
+              sub={ridesSub}
+            />
+            <KpiCard
+              label='Needs action'
+              href={cardHref("NEEDS_ACTION")}
+              active={status === "NEEDS_ACTION"}
+              value={chartData.summary.needsAction}
+              sub='Pending review or payment'
+              tone='warn'
+            />
+            <KpiCard
+              label='Booked'
+              href={cardHref("BOOKED")}
+              active={status === "BOOKED"}
+              value={chartData.summary.upcoming - chartData.summary.needsAction}
+              sub='Confirmed or assigned'
+              tone='tip'
+            />
+            <KpiCard
+              label='Done'
+              href={cardHref("DONE")}
+              active={status === "DONE"}
+              value={chartData.summary.done}
+              sub='Completed or underway'
+              tone='good'
+            />
+            <KpiCard
+              label='Lost'
+              href={cardHref("LOST")}
+              active={status === "LOST"}
+              value={chartData.summary.lost}
+              sub={
+                chartData.summary.lostRate == null
+                  ? "Cancelled, no-show, declined"
+                  : `${Math.round(chartData.summary.lostRate * 100)}% · cancelled, no-show, declined`
+              }
+              tone='bad'
+            />
+            <KpiCard
+              label='Trips'
+              value={chartData.summary.trips}
+              sub='A multi-ride trip counts once'
+            />
+            <KpiCard
+              label='Booked value'
+              value={Math.round(chartData.summary.bookedValueCents / 100)}
+              prefix='$'
+              sub='Excludes lost rides'
+            />
+            <KpiCard
+              label='Collected'
+              value={Math.round((collection?.collectedCents ?? 0) / 100)}
+              prefix='$'
+              sub={
+                collection && collection.scheduledCents > 0
+                  ? `${Math.round((collection.collectedRate ?? 0) * 100)}% of booked value${collection.unpaidCompletedCents > 0 ? ` · ${tz.formatMoneyShort(collection.unpaidCompletedCents)} unpaid on completed rides` : ""}`
+                  : "Nothing booked yet"
+              }
+            />
+          </div>
+
+          <BookingsChart
+            data={chartData}
+            breakdown={breakdown}
+            rangeLabel={rangeLabel}
+          />
+        </div>
+      ) : null}
+      <Pagination
+        totalCount={totalCount}
+        page={safePage}
+        totalPages={totalPages}
+        current={pageParams}
+      />
 
       {bookings.length === 0 ? (
         <div className={styles.empty}>
@@ -1096,29 +1092,19 @@ export default async function AdminBookingsPage({
 
                     const driverName = b.assignment?.driver?.name?.trim() || "";
                     const driverEmail = b.assignment?.driver?.email ?? "";
-                    const payStatus = b.payment?.status ?? null;
-
-                    const statusDisplay =
-                      payStatus === "PARTIALLY_PAID"
-                        ? "Partially paid"
-                        : payStatus === "PAID" &&
-                            (b.status === "CONFIRMED" ||
-                              b.status === "PENDING_PAYMENT")
-                          ? "Paid"
-                          : payStatus === "PAID" && b.status === "COMPLETED"
-                            ? "Completed · Paid"
-                            : statusLabel(b.status);
-
-                    const statusTone: BadgeTone =
-                      payStatus === "PARTIALLY_PAID"
-                        ? "warn"
-                        : payStatus === "PAID" &&
-                            (b.status === "CONFIRMED" ||
-                              b.status === "PENDING_PAYMENT")
-                          ? "good"
-                          : payStatus === "PAID" && b.status === "COMPLETED"
-                            ? "good"
-                            : badgeTone(b.status);
+                    // Where the ride is, and whether it's paid (for a ride
+                    // in a trip: the whole trip).
+                    const statusInfo = statusBadge(b.status);
+                    const payInfo = paymentTag({
+                      status: b.status,
+                      paymentStatus: b.payment?.status ?? null,
+                      trip: tripGroup
+                        ? {
+                            paymentStatus: tripGroup.paymentStatus,
+                            amountPaidCents: tripGroup.amountPaidCents ?? 0,
+                          }
+                        : null,
+                    });
 
                     const createdEvent = b.statusEvents?.[0] ?? null;
                     const actor = createdEvent?.createdBy ?? null;
@@ -1239,9 +1225,7 @@ export default async function AdminBookingsPage({
                             }}
                           />
                           <div className={styles.pickupMeta}>
-                            <span className={`badge badge_${statusTone}`}>
-                              {statusDisplay}
-                            </span>
+                            <RideBadges status={statusInfo} payment={payInfo} />
                             {tripGroup && legNumber > 0 && (
                               <TripGroupBadge
                                 legNumber={legNumber}
@@ -1391,217 +1375,6 @@ export default async function AdminBookingsPage({
 
 /* ── Filter Checkbox Sections ──────────────────────────────── */
 
-function FilterCheckboxSections({
-  current,
-  isDriverSelected,
-  counts,
-}: {
-  current: Record<string, string | undefined>;
-  isDriverSelected: boolean;
-  counts: {
-    future: number;
-    completed: number;
-    stuck: number;
-    paid: number;
-    unpaid: number;
-    assigned: number;
-    unassigned: number;
-    flightInfo: number;
-  };
-}) {
-  const futureOn = current.future === "1";
-  const completedOn = current.completed === "1";
-  const stuckOn = current.stuck === "1";
-  const paidOn = current.paid === "1";
-  const unpaidOn = current.unpaid === "1";
-  const assignedOn = current.assigned === "1";
-  const unassignedOn = current.unassigned === "1";
-
-  // Trip filter hrefs (mutually exclusive within group)
-  const futureHref = buildHref("/admin/bookings", {
-    ...current,
-    future: futureOn ? undefined : "1",
-    completed: undefined,
-    stuck: undefined,
-    page: undefined,
-  });
-
-  const completedHref = buildHref("/admin/bookings", {
-    ...current,
-    completed: completedOn ? undefined : "1",
-    future: undefined,
-    stuck: undefined,
-    page: undefined,
-  });
-
-  const stuckHref = buildHref("/admin/bookings", {
-    ...current,
-    stuck: stuckOn ? undefined : "1",
-    status: stuckOn ? current.status : "PENDING_REVIEW",
-    future: undefined,
-    completed: undefined,
-    page: undefined,
-  });
-
-  // Pay filter hrefs (mutually exclusive)
-  const paidHref = buildHref("/admin/bookings", {
-    ...current,
-    paid: paidOn ? undefined : "1",
-    unpaid: undefined,
-    page: undefined,
-  });
-
-  const unpaidHref = buildHref("/admin/bookings", {
-    ...current,
-    unpaid: unpaidOn ? undefined : "1",
-    paid: undefined,
-    page: undefined,
-  });
-
-  // Assignment filter hrefs (mutually exclusive)
-  const assignedHref = buildHref("/admin/bookings", {
-    ...current,
-    assigned: assignedOn ? undefined : "1",
-    unassigned: undefined,
-    page: undefined,
-  });
-
-  const unassignedHref = buildHref("/admin/bookings", {
-    ...current,
-    unassigned: unassignedOn ? undefined : "1",
-    assigned: undefined,
-    page: undefined,
-  });
-
-  const flightInfoOn = current.flightInfo === "1";
-  const flightInfoHref = buildHref("/admin/bookings", {
-    ...current,
-    flightInfo: flightInfoOn ? undefined : "1",
-    page: undefined,
-  });
-
-  return (
-    <div className={styles.filterSections}>
-      {/* Trip Filters */}
-      <div className={styles.filterSection}>
-        <div className={styles.filterTitle}>Trip Filters</div>
-        <div className={styles.checkboxCol}>
-          <CheckboxLink
-            label='Future Trips'
-            active={futureOn}
-            href={futureHref}
-            count={counts.future}
-          />
-          <CheckboxLink
-            label='Completed'
-            active={completedOn}
-            href={completedHref}
-            count={counts.completed}
-          />
-          <CheckboxLink
-            label='Stuck in Review'
-            active={stuckOn}
-            href={stuckHref}
-            count={counts.stuck}
-          />
-          <CheckboxLink
-            label='Has Flight Info'
-            active={flightInfoOn}
-            href={flightInfoHref}
-            count={counts.flightInfo}
-          />
-        </div>
-      </div>
-
-      {/* Pay Filters */}
-      <div className={styles.filterSection}>
-        <div className={styles.filterTitle}>Pay Filters</div>
-        <div className={styles.checkboxCol}>
-          <CheckboxLink
-            label='Paid'
-            active={paidOn}
-            href={paidHref}
-            count={counts.paid}
-          />
-          <CheckboxLink
-            label='Unpaid'
-            active={unpaidOn}
-            href={unpaidHref}
-            count={counts.unpaid}
-          />
-        </div>
-      </div>
-
-      {/* Assignment Filters */}
-      <div className={styles.filterSection}>
-        <div className={styles.filterTitle}>Assignment Filters</div>
-        <div className={styles.checkboxCol}>
-          <CheckboxLink
-            label='Assigned'
-            active={assignedOn}
-            href={assignedHref}
-            count={counts.assigned}
-            disabled={isDriverSelected}
-          />
-          <CheckboxLink
-            label='Unassigned'
-            active={unassignedOn}
-            href={unassignedHref}
-            count={counts.unassigned}
-            disabled={isDriverSelected}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CheckboxLink({
-  label,
-  active,
-  href,
-  count,
-  disabled = false,
-}: {
-  label: string;
-  active: boolean;
-  href: string;
-  count: number;
-  disabled?: boolean;
-}) {
-  const classes = [
-    styles.checkboxLink,
-    active ? styles.checkboxActive : "",
-    disabled ? styles.checkboxDisabled : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  if (disabled) {
-    return (
-      <span className={classes}>
-        <span className={styles.checkboxBox}>
-          {active && <span className={styles.checkmark}>✓</span>}
-        </span>
-        {label}
-        <span className='countPill'>{count}</span>
-      </span>
-    );
-  }
-
-  return (
-    <Link className={classes} href={href}>
-      <span className={styles.checkboxBox}>
-        {active && <span className={styles.checkmark}>✓</span>}
-      </span>
-      {label}
-      <span className='countPill'>{count}</span>
-    </Link>
-  );
-}
-
-/* ── Sortable Header ──────────────────────────────────────── */
-
 function SortableHeader({
   label,
   column,
@@ -1697,7 +1470,8 @@ function Pagination({
     <div className={styles.pagination}>
       <div className={styles.paginationLeft}>
         <span className={styles.paginationMeta}>
-          Page <strong>{page}</strong> of <strong>{totalPages}</strong>
+          <strong>{totalCount}</strong> total • Page <strong>{page}</strong> of{" "}
+          <strong>{totalPages}</strong>
         </span>
       </div>
 

@@ -1,5 +1,6 @@
 "use client";
 
+import NavProgress from "@/components/shared/NavProgress/NavProgress";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
@@ -91,6 +92,7 @@ export default function Nav(props: NavProps) {
           )}
         </div>
       </nav>
+      <NavProgress />
     </header>
   );
 }

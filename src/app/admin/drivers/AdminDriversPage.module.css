@@ -1,5 +1,8 @@
 .container {
   display: grid;
+  /* One column that never grows past the screen; wide tables scroll inside
+     their cards instead of stretching the page. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
 }
 
@@ -22,7 +25,7 @@
 .tableCard {
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 14px;
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .table {
@@ -100,10 +103,8 @@
   }
 
   .td {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
+    display: block;
+    text-align: left;
     padding: 10px 0;
     border-top: 1px solid rgba(0, 0, 0, 0.06);
   }
@@ -117,13 +118,191 @@
     padding-bottom: 0;
   }
 
-  .td::before {
+  /* A cell with a data-label shows it on its own line above the value.
+     Cells without one take no extra space. */
+  .td[data-label]::before {
     content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
     font-size: 1.4rem;
     opacity: 0.7;
     font-weight: 700;
     letter-spacing: normal;
-    min-width: 110px;
-    padding-right: 10px;
   }
+
+  .td.num {
+    text-align: left;
+  }
+}
+
+/* ── Drivers page additions ── */
+.num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.attention {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  margin: 1.6rem 0;
+  padding: 1.2rem 1.6rem;
+  border-radius: 10px;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  background: rgba(255, 200, 9, 0.18);
+}
+
+.attentionItems {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.6rem;
+  align-items: baseline;
+}
+
+.attentionActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+.block {
+  margin: 2.4rem 0;
+  scroll-margin-top: 2rem;
+}
+
+.blockHead {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1.2rem;
+}
+
+.warnNote {
+  color: var(--darkYellow, #92400e);
+}
+
+.doc_bad {
+  color: var(--red, #b91c1c);
+  font-weight: 600;
+}
+
+.doc_warn {
+  color: var(--darkYellow, #92400e);
+  font-weight: 600;
+}
+
+.doc_ok {
+  color: var(--darkGreen, #166534);
+}
+
+.doc_none {
+  color: var(--paragraph, #666);
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.6rem;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr));
+  gap: 2.2rem 2rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.field input,
+.field textarea {
+  font: inherit;
+}
+
+.checkRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.6rem 2.4rem;
+  margin: 2.4rem 0;
+}
+
+.formFoot {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  margin-top: 3rem;
+}
+
+.downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+  
+}
+
+/* Rides not closed out */
+.dateCell {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.muted {
+  color: var(--paragraph, #666);
+}
+
+.code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.3rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.td :global(.badge) {
+  white-space: nowrap;
+  display: inline-block;
+}
+
+/* Driver details form */
+.formSection {
+  margin: 3.2rem 0 1.8rem;
+}
+
+.notesField {
+  margin-top: 2.4rem;
+}
+
+/* Text fields look like the dropdowns, without the arrow. */
+.textField {
+  width: 100%;
+  border: 3px solid var(--stroke);
+  border-radius: 7px;
+  padding: 0.75rem 1rem;
+  background: var(--white, #fff);
+  color: var(--black);
+  font-family: inherit;
+  font-size: 1.6rem;
+  font-weight: 500;
+  letter-spacing: normal;
+}
+
+/* Upcoming schedule: each ride gets room to breathe */
+.upcomingCell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.8rem 1.6rem !important;
 }

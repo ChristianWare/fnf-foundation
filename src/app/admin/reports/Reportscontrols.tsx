@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
+import { useNavProgress } from "@/components/shared/NavProgress/useNavProgress";
+import PeriodTabs from "@/components/admin/PeriodTabs/PeriodTabs";
+import { DatePicker } from "@/components/shared/DatePicker";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition, type FormEvent } from "react";
 import styles from "./AdminReportsPage.module.css";
@@ -61,12 +64,15 @@ export default function ReportsControls({
   initialFrom,
   initialTo,
   rangeLabel,
+  basis = "pickup",
 }: {
   years: string[];
   monthOptions: { v: string; label: string }[];
   defaultFrom: string;
   defaultTo: string;
   initialView: ViewMode;
+  /** Which date the bookings and driver sections count by. */
+  basis?: "pickup" | "created";
   initialYear: string;
   initialMonth: string;
   initialFrom: string;
@@ -77,6 +83,7 @@ export default function ReportsControls({
   const pathname = usePathname();
   const sp = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  useNavProgress(isPending);
 
   const spKey = sp.toString();
   const activeView = cleanView(sp.get("view"));
@@ -96,6 +103,13 @@ export default function ReportsControls({
     const qs = next.toString();
     const href = qs ? `${pathname}?${qs}` : pathname;
     startTransition(() => router.replace(href, { scroll: false }));
+  }
+
+  function onBasisChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const next = new URLSearchParams(spKey);
+    if (e.target.value === "created") next.set("basis", "created");
+    else next.delete("basis");
+    nav(next);
   }
 
   function setView(nextView: ViewMode) {
@@ -163,56 +177,43 @@ export default function ReportsControls({
 
   return (
     <div className={styles.controlsWrapper}>
-      <div className={styles.tabs}>
-        <button
-          type='button'
-          className={`tab ${activeView === "daily" ? "tabActive" : ""}`}
-          onClick={() => setView("daily")}
-          disabled={isPending}
-        >
-          Daily
-        </button>
-
-        <button
-          type='button'
-          className={`tab ${activeView === "monthly" ? "tabActive" : ""}`}
-          onClick={() => setView("monthly")}
-          disabled={isPending}
-        >
-          Monthly
-        </button>
-
-        <button
-          type='button'
-          className={`tab ${activeView === "ytd" ? "tabActive" : ""}`}
-          onClick={() => setView("ytd")}
-          disabled={isPending}
-        >
-          Year to date
-        </button>
-
-        <button
-          type='button'
-          className={`tab ${activeView === "all" ? "tabActive" : ""}`}
-          onClick={() => setView("all")}
-          disabled={isPending}
-        >
-          All time
-        </button>
-
-        <button
-          type='button'
-          className={`tab ${activeView === "range" ? "tabActive" : ""}`}
-          onClick={() => setView("range")}
-          disabled={isPending}
-        >
-          Date range
-        </button>
-
-        <div className={styles.rangePill}>
-          <span className='miniNote'>{rangeLabel}</span>
-        </div>
+      <div className={styles.basisRow}>
+        <label className={styles.basisLabel}>
+          <span className='miniNote'>Showing</span>
+          <select
+            className='selectBorder emptySmall'
+            value={basis}
+            onChange={onBasisChange}
+            disabled={isPending}
+          >
+            <option value='pickup'>Rides happening in this period</option>
+            <option value='created'>Bookings made in this period</option>
+          </select>
+        </label>
+        <span className='miniNote'>
+          Money is always counted by payment date.
+        </span>
       </div>
+      <PeriodTabs
+        className={styles.tabs}
+        pillClassName={styles.rangePill}
+        groups={[
+          {
+            label: "Period",
+            tabs: [
+              { value: "daily", label: "Daily" },
+              { value: "monthly", label: "Monthly" },
+              { value: "ytd", label: "Year to date" },
+              { value: "all", label: "All time" },
+              { value: "range", label: "Date range" },
+            ],
+          },
+        ]}
+        active={activeView}
+        onSelect={(v) => setView(v as ViewMode)}
+        disabled={isPending}
+        rangeLabel={rangeLabel}
+      />
 
       {activeView === "daily" && (
         <form
@@ -272,9 +273,8 @@ export default function ReportsControls({
         >
           <label className={styles.filterField}>
             <span className='miniNote'>From</span>
-            <input
+            <DatePicker
               className={styles.filterInput}
-              type='date'
               name='from'
               defaultValue={urlRange.from}
               disabled={isPending}
@@ -283,9 +283,8 @@ export default function ReportsControls({
 
           <label className={styles.filterField}>
             <span className='miniNote'>To</span>
-            <input
+            <DatePicker
               className={styles.filterInput}
-              type='date'
               name='to'
               defaultValue={urlRange.to}
               disabled={isPending}

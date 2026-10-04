@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
+import { useNavProgress } from "@/components/shared/NavProgress/useNavProgress";
+import PeriodTabs from "@/components/admin/PeriodTabs/PeriodTabs";
+import { DatePicker } from "@/components/shared/DatePicker";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition, type FormEvent } from "react";
 import styles from "./AdminEarningsPage.module.css";
@@ -82,6 +85,7 @@ export default function EarningsControls({
   const pathname = usePathname();
   const sp = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  useNavProgress(isPending);
 
   const spKey = sp.toString();
   const activeView = cleanView(sp.get("view"));
@@ -203,65 +207,27 @@ export default function EarningsControls({
       </div>
 
       {/* View tabs */}
-      <div className={styles.tabs}>
-        <button
-          type='button'
-          className={`tab ${activeView === "daily" ? "tabActive" : ""}`}
-          onClick={() => setView("daily")}
-          disabled={isPending}
-        >
-          Daily
-        </button>
-
-        <button
-          type='button'
-          className={`tab ${activeView === "weekly" ? "tabActive" : ""}`}
-          onClick={() => setView("weekly")}
-          disabled={isPending}
-        >
-          Weekly
-        </button>
-
-        <button
-          type='button'
-          className={`tab ${activeView === "monthly" ? "tabActive" : ""}`}
-          onClick={() => setView("monthly")}
-          disabled={isPending}
-        >
-          Monthly
-        </button>
-
-        <button
-          type='button'
-          className={`tab ${activeView === "ytd" ? "tabActive" : ""}`}
-          onClick={() => setView("ytd")}
-          disabled={isPending}
-        >
-          Year to date
-        </button>
-
-        <button
-          type='button'
-          className={`tab ${activeView === "all" ? "tabActive" : ""}`}
-          onClick={() => setView("all")}
-          disabled={isPending}
-        >
-          All time
-        </button>
-
-        <button
-          type='button'
-          className={`tab ${activeView === "range" ? "tabActive" : ""}`}
-          onClick={() => setView("range")}
-          disabled={isPending}
-        >
-          Date range
-        </button>
-
-        <div className={styles.rangePill}>
-          <span className='miniNote'>{rangeLabel}</span>
-        </div>
-      </div>
+      <PeriodTabs
+        className={styles.tabs}
+        pillClassName={styles.rangePill}
+        groups={[
+          {
+            label: "Period",
+            tabs: [
+              { value: "daily", label: "Daily" },
+              { value: "weekly", label: "Weekly" },
+              { value: "monthly", label: "Monthly" },
+              { value: "ytd", label: "Year to date" },
+              { value: "all", label: "All time" },
+              { value: "range", label: "Date range" },
+            ],
+          },
+        ]}
+        active={activeView}
+        onSelect={(v) => setView(v as ViewMode)}
+        disabled={isPending}
+        rangeLabel={rangeLabel}
+      />
 
       {activeView === "daily" ? (
         <form
@@ -315,9 +281,8 @@ export default function EarningsControls({
         >
           <label className={styles.rangeField}>
             <span className='miniNote'>From</span>
-            <input
+            <DatePicker
               className='selectBorder'
-              type='date'
               name='from'
               defaultValue={urlRange.from}
               disabled={isPending}
@@ -326,9 +291,8 @@ export default function EarningsControls({
 
           <label className={styles.rangeField}>
             <span className='miniNote'>To</span>
-            <input
+            <DatePicker
               className='selectBorder'
-              type='date'
               name='to'
               defaultValue={urlRange.to}
               disabled={isPending}

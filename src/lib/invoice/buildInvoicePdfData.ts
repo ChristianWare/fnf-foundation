@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // src/lib/invoice/buildInvoicePdfData.ts
+import { companyDisplayName } from "@/lib/companyName";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { createElement } from "react";
 import { db } from "@/lib/db";
@@ -7,7 +8,6 @@ import { getCompanySettings } from "../../../actions/admin/companySettings";
 import InvoiceDocumentPDF, {
   type InvoiceDocData,
 } from "@/lib/invoice/InvoiceDocumentPDF";
-import { SITE } from "@/config/site";
 
 function fmtDate(d: Date | null | undefined): string | null {
   if (!d) return null;
@@ -75,7 +75,7 @@ export async function buildInvoicePdfData(
     paidDate: fmtDate(invoice.paidAt),
     status: invoice.status,
     company: {
-      name: settings.companyName ?? SITE.name,
+      name: companyDisplayName(settings),
       address: settings.officeAddress ?? "",
       city: settings.officeCity ?? "",
       phone: settings.dispatchPhone ?? "",

@@ -1,5 +1,6 @@
 .container {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 2rem;
 }
 
@@ -33,6 +34,7 @@
 .meta {
   font-size: 1.4rem;
   opacity: 0.75;
+  /* margin-top: -1rem; */
 }
 
 .metaSep {
