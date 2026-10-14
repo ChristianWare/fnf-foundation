@@ -81,7 +81,10 @@ Vehicle categories + photos, Drivers (invite), office hours.
 - [ ] Driver: logs in, sees the trip, updates status
 - [ ] Customer: sees the trip in `/dashboard`
 - [ ] Emails: booking confirmation, driver assignment, admin alert all arrive
-- [ ] Create + send one invoice; open the PDF
+- [ ] Create + send one invoice; open the PDF (check the default "from"
+      address is the client's, then try a custom address and a bill-to address)
+- [ ] Click the pay link in the invoice email — it must open the live domain,
+      not localhost (`APP_URL` set in production)
 - [ ] `/sitemap.xml`, `/robots.txt`, `/llms.txt`, `/manifest.webmanifest` render with the client's name
 - [ ] Run a Lighthouse pass on mobile
 

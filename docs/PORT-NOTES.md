@@ -93,6 +93,29 @@
   auth pages, `shared/{Button,Modal,Faq,AboutNumbers,WhatHappensNext,...}` that
   those pages use.
 
+## Synced from nier-final on 2026-10-14 (commits fe977d8 → 1bc295e, invoice addresses)
+
+- **Invoice sender address.** New invoices offer *Use default address* (the
+  Company Settings office address, which falls back to `SITE.address`) or *Use
+  a different address* (street / city / state dropdown / ZIP). Either way the
+  address is saved on the invoice (`Invoice.fromAddress`,
+  `fromAddressCustom`), so later Company Settings edits don't rewrite issued
+  invoices. Invoices created before this change have no saved copy and keep
+  reading the live settings.
+- **Optional bill-to address** (`Invoice.billToAddress`), same four fields,
+  printed under the customer's name in BILL TO. Blank = not shown; a partly
+  filled address shows a warning and isn't saved.
+- **Edit addresses** on any unpaid, non-void invoice from an Addresses card on
+  `/admin/invoices/[id]` (`adminUpdateInvoiceAddresses` in
+  `actions/admin/invoices/invoiceActions.ts`). Each edit logs an
+  `ADDRESS_UPDATED` invoice event with before/after values.
+- Shared rules in `src/lib/invoice/invoiceAddress.ts`; shared fields in
+  `src/app/admin/invoices/InvoiceAddressFields/`. The PDF builder feeds the
+  admin download and both invoice emails, so all three pick this up.
+- Guest phone on the new-invoice form formats as `(555) 555-5555` while typing.
+- Schema: three nullable/defaulted columns on `Invoice` — run `npx prisma db push`.
+- Placeholders in the address fields made neutral (`City`, `12345`).
+
 ## Known follow-ups (not blocking)
 
 - Marketing copy in `HomePage`, `AboutPage`, `Stats`, etc. is Nier's story with
