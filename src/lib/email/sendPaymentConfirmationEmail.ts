@@ -9,6 +9,7 @@ import type { InvoiceData, InvoiceLineItem } from "@/lib/invoice/types";
 import { formatInvoiceDate, formatTripDateTime } from "@/lib/invoice/types";
 import { SITE } from "@/config/site";
 import { formatDueDate } from "@/lib/booking/dueDates";
+import { EXTRA_STOP_FEE_CENTS } from "@/lib/pricing/calcQuote";
 
 function requireEnv(name: string) {
   const v = process.env[name];
@@ -709,7 +710,7 @@ export async function buildInvoiceDataForBooking(bookingId: string): Promise<{
   } else {
     const stopCount = booking.stops?.length ?? 0;
     const stopSurchargeCents =
-      (booking as any).stopSurchargeCents ?? stopCount * 1500;
+      (booking as any).stopSurchargeCents ?? stopCount * EXTRA_STOP_FEE_CENTS;
     // The ride is listed at its price before a discount code; the discount
     // gets its own line.
     const codeDiscountCents = (booking as any).discountCodeId

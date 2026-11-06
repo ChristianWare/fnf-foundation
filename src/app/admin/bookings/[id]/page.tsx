@@ -52,6 +52,7 @@ import { BookingTabsProvider } from "@/components/admin/BookingDetailTabs/Bookin
 import BookingCompletionChecklist from "@/components/admin/BookingCompletionChecklist/BookingCompletionChecklist";
 import EditHoursClient from "./EditHoursClient";
 import { SITE } from "@/config/site";
+import { EXTRA_STOP_FEE_CENTS } from "@/lib/pricing/calcQuote";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -770,7 +771,7 @@ export default async function AdminBookingDetailPage({
     booking.dropoffLng;
   const hasStops = booking.stops && booking.stops.length > 0;
   const stopCount = booking.stops?.length ?? 0;
-  const stopSurchargeCents = booking.stopSurchargeCents ?? stopCount * 1500;
+  const stopSurchargeCents = booking.stopSurchargeCents ?? stopCount * EXTRA_STOP_FEE_CENTS;
   const totalWaitTimeMinutes =
     booking.stops?.reduce((sum, s) => sum + (s.waitTimeMinutes ?? 5), 0) ?? 0;
   const stopsForMap =
@@ -865,7 +866,7 @@ export default async function AdminBookingDetailPage({
     };
   } else if (isPaid || amountPaidCents > 0) {
     const baseFareCents =
-      booking.subtotalCents - (booking.stopSurchargeCents ?? stopCount * 1500);
+      booking.subtotalCents - (booking.stopSurchargeCents ?? stopCount * EXTRA_STOP_FEE_CENTS);
     const invoiceLineItems: InvoiceLineItem[] = [
       {
         description: `${booking.serviceType?.name ?? "Transportation"} - ${booking.vehicle?.name ?? "Vehicle"}`,

@@ -7,9 +7,11 @@
  */
 
 import { ServicePricingStrategy } from "@prisma/client";
+import { SITE } from "@/config/site";
 
 // ✅ Flat fee per extra stop (in cents)
-export const EXTRA_STOP_FEE_CENTS = 1500; // $15.00 per stop
+// Per-stop charge, set per client in SITE.booking (src/config/site.ts).
+export const EXTRA_STOP_FEE_CENTS = SITE.booking.extraStopFeeCents;
 
 // ✅ Estimated wait time per stop (in minutes) - for display purposes
 export const STOP_WAIT_TIME_MINUTES = 5;

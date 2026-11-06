@@ -35,6 +35,7 @@ Default admin: `admin@example.com` / `ChangeMe123!` (override with
 | What | Where |
 |---|---|
 | Name, phone, emails, address, domain, socials, owner | `src/config/site.ts` |
+| Booking rules (lead time, hourly minimum, stop fee, free wait times, cancellation window, meet & greet) and partner-only vehicles | `src/config/site.ts` → `booking`, `partnerVehicles` |
 | Colors and fonts | `src/app/globals.css` (`:root` tokens) + `src/app/layout.tsx` (font import) |
 | Services, cities, routes, airports, fleet, FAQs | `src/lib/services.ts`, `cities.ts`, `routes.ts`, `airports.ts`, `data.ts` (example entries; one entry = one page) |
 | What each page should contain | `src/lib/pageGuides.ts` (shown on every placeholder page) |

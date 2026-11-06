@@ -16,6 +16,7 @@ import RouteMapDisplay from "@/components/admin/RouteMapDisplay/RouteMapDisplay"
 import InvoiceSection from "@/app/dashboard/trips/[id]/InvoiceSection";
 import { getCorporateInvoiceData } from "../../../../../actions/corporate/getCorporateInvoiceData";
 import type { InvoiceData } from "@/lib/invoice/types";
+import { EXTRA_STOP_FEE_CENTS } from "@/lib/pricing/calcQuote";
 
 export const metadata = { title: "Booking Details | Corporate" };
 export const runtime = "nodejs";
@@ -210,7 +211,7 @@ export default async function CorporateBookingDetailPage({
 
   const hasStops = booking.stops && booking.stops.length > 0;
   const stopCount = booking.stops?.length ?? 0;
-  const stopSurchargeCents = booking.stopSurchargeCents ?? stopCount * 1500;
+  const stopSurchargeCents = booking.stopSurchargeCents ?? stopCount * EXTRA_STOP_FEE_CENTS;
   const totalWaitTimeMinutes =
     booking.stops?.reduce((sum, s) => sum + (s.waitTimeMinutes ?? 5), 0) ?? 0;
 

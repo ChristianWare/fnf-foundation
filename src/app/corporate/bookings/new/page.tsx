@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { PUBLIC_VEHICLE_WHERE } from "@/lib/booking/partnerVehicles";
 import { db } from "@/lib/db";
 import { auth } from "../../../../../auth";
 import { redirect } from "next/navigation";
@@ -74,7 +75,7 @@ export default async function CorporateNewBookingPage() {
 
   const [serviceTypes, vehicles, blackouts, passengers] = await Promise.all([
     db.serviceType.findMany({
-      where: { active: true },
+      where: PUBLIC_VEHICLE_WHERE,
       include: {
         airports: {
           where: { active: true },

@@ -3,6 +3,7 @@
   grid-template-columns: 2fr 4fr;
   grid-gap: 15rem;
   align-items: start;
+  padding-bottom: 10rem;
 }
 
 .checklistContainer,
@@ -545,5 +546,91 @@
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.6);
   border: 2px solid rgba(255, 255, 255, 0.9);
+  flex-shrink: 0;
+}
+
+/* ─── Airport list (airport pickup / drop-off services) ─── */
+.airportOptions {
+  display: grid;
+  gap: 1rem;
+}
+
+.airportOption {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.2rem;
+  padding: 1.4rem 1.6rem;
+  border: 1px solid var(--strokeii);
+  border-radius: 8px;
+  background: var(--white);
+  cursor: pointer;
+}
+
+.airportOption:hover {
+  border-color: var(--black400);
+}
+
+.airportOptionActive {
+  border: 2px solid var(--black);
+  padding: calc(1.4rem - 1px) calc(1.6rem - 1px);
+}
+
+.airportOption input {
+  margin-top: 0.3rem;
+  width: 1.8rem;
+  height: 1.8rem;
+  flex-shrink: 0;
+  accent-color: var(--black);
+}
+
+.airportOptionText {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.airportOptionName {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--black);
+}
+
+.airportOptionAddress {
+  font-size: 1.3rem;
+  color: var(--paragraph);
+  line-height: 1.3;
+}
+
+/* ─── Confirm step: what's included ─── */
+.includedBox {
+  background: #f7f7f5;
+}
+
+.includedList {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding-left: 2rem;
+  font-size: 1.45rem;
+  line-height: 1.4;
+}
+
+.meetGreetRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-top: 1.4rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--stroke);
+  border-radius: 8px;
+  background: var(--white);
+  font-size: 1.4rem;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.meetGreetRow input {
+  margin-top: 0.3rem;
+  width: 1.6rem;
+  height: 1.6rem;
   flex-shrink: 0;
 }

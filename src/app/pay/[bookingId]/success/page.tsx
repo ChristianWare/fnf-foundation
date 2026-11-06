@@ -9,6 +9,7 @@ import InvoiceSection from "@/app/dashboard/trips/[id]/InvoiceSection";
 import type { InvoiceData, InvoiceLineItem } from "@/lib/invoice/types";
 import { formatInvoiceDate, formatTripDateTime } from "@/lib/invoice/types";
 import { SITE } from "@/config/site";
+import { EXTRA_STOP_FEE_CENTS } from "@/lib/pricing/calcQuote";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -280,7 +281,7 @@ export default async function PaymentSuccessPage({
   } else if (isPaid) {
     // Single ride invoice
     const stopCount = booking.stops?.length ?? 0;
-    const stopSurchargeCents = booking.stopSurchargeCents ?? stopCount * 1500;
+    const stopSurchargeCents = booking.stopSurchargeCents ?? stopCount * EXTRA_STOP_FEE_CENTS;
     const baseFareCents = booking.subtotalCents - stopSurchargeCents;
 
     const lineItems: InvoiceLineItem[] = [];

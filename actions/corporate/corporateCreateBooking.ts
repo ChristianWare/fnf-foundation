@@ -10,6 +10,10 @@ import { sendAdminNotificationsForBookingEvent } from "@/lib/notifications/queue
 import { getCompanySettings } from "../../actions/admin/companySettings";
 import { formatIsoDate } from "@/lib/timezone";
 import { SITE } from "@/config/site";
+import {
+  BOOKING_LEAD_MINUTES,
+  LEAD_TIME_MESSAGE_WITH_CALL,
+} from "@/lib/booking/rules";
 
 // ✅ Corporate bookings go straight to CONFIRMED (or PENDING_REVIEW if you want admin approval)
 const CORPORATE_BOOKING_STATUS: BookingStatus = "CONFIRMED";
@@ -137,12 +141,12 @@ export async function corporateCreateBooking(
   if (!Number.isFinite(pickupAtDate.getTime()))
     return { error: "Invalid pickup time." as const };
 
-  // ─── 36-hour advance booking requirement ───
-  const minPickupAt = new Date(Date.now() + 36 * 60 * 60 * 1000);
+  // ─── Advance booking requirement (src/lib/booking/rules.ts) ───
+  const minPickupAt = new Date(Date.now() + BOOKING_LEAD_MINUTES * 60 * 1000);
   if (pickupAtDate < minPickupAt) {
     return {
       error:
-        "Bookings must be made at least 36 hours in advance. Please select a later date/time, or call for bookings." as const,
+        LEAD_TIME_MESSAGE_WITH_CALL,
     };
   }
 

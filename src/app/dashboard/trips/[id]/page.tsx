@@ -20,6 +20,7 @@ import InvoiceSection from "./InvoiceSection";
 import type { InvoiceData, InvoiceLineItem } from "@/lib/invoice/types";
 import { formatInvoiceDate, formatTripDateTime } from "@/lib/invoice/types";
 import { SITE } from "@/config/site";
+import { EXTRA_STOP_FEE_CENTS } from "@/lib/pricing/calcQuote";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -253,7 +254,7 @@ export default async function UserTripDetailPage({
   // Check for stops
   const hasStops = booking.stops && booking.stops.length > 0;
   const stopCount = booking.stops?.length ?? 0;
-  const stopSurchargeCents = booking.stopSurchargeCents ?? stopCount * 1500;
+  const stopSurchargeCents = booking.stopSurchargeCents ?? stopCount * EXTRA_STOP_FEE_CENTS;
   const totalWaitTimeMinutes =
     booking.stops?.reduce((sum, s) => sum + (s.waitTimeMinutes ?? 5), 0) ?? 0;
 

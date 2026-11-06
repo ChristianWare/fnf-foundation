@@ -7,6 +7,7 @@ import { generateInvoicePDF } from "@/lib/invoice";
 import type { InvoiceData, InvoiceLineItem } from "@/lib/invoice/types";
 import { formatInvoiceDate, formatTripDateTime } from "@/lib/invoice/types";
 import { SITE } from "@/config/site";
+import { EXTRA_STOP_FEE_CENTS } from "@/lib/pricing/calcQuote";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -124,7 +125,7 @@ export async function GET(
 
     // Base fare (subtotal minus stop surcharge)
     const stopCount = booking.stops?.length ?? 0;
-    const stopSurchargeCents = booking.stopSurchargeCents ?? stopCount * 1500;
+    const stopSurchargeCents = booking.stopSurchargeCents ?? stopCount * EXTRA_STOP_FEE_CENTS;
     const baseFareCents = booking.subtotalCents - stopSurchargeCents;
 
     lineItems.push({

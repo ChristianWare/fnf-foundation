@@ -92,6 +92,35 @@ export interface SiteConfig {
     /** Partner landing pages. Empty array hides the Partners menu. */
     partners: PartnerLink[];
   };
+  /**
+   * Booking rules. Every booking tool (public, corporate, admin) and the
+   * server actions that save bookings read these through
+   * src/lib/booking/rules.ts, and the policy copy on the site and in the
+   * booking tool's "What's included" box is written from them.
+   */
+  booking: {
+    /** How far ahead an online booking must be made, in hours. */
+    leadHours: number;
+    /** Minimum hours for any hourly booking (a vehicle can require more). */
+    hourlyMinHours: number;
+    /** Charge per extra stop, in cents (1500 = $15). */
+    extraStopFeeCents: number;
+    /** Free wait on airport pickups, counted from when the flight lands. */
+    airportFreeWaitMinutes: number;
+    /** Free wait at any other pickup (hotel, home, office). */
+    pickupGraceMinutes: number;
+    /** Free cancellation up to this many hours before pickup. */
+    cancellationFreeHours: number;
+    /** Meet & greet inside baggage claim is free on airport pickups. */
+    meetAndGreetFree: boolean;
+  };
+  /**
+   * Vehicles that belong to a partner's own booking page (a hotel or golf
+   * club with its own booking tool), keyed by partner id, listed by their
+   * exact name in Admin → Vehicle Categories. The public, corporate and admin
+   * booking tools never list them. Leave empty if there are no partner tools.
+   */
+  partnerVehicles: Record<string, string[]>;
 }
 
 const url = "https://www.example.com";
@@ -149,4 +178,14 @@ export const SITE: SiteConfig = {
   nav: {
     partners: [],
   },
+  booking: {
+    leadHours: 36,
+    hourlyMinHours: 2,
+    extraStopFeeCents: 1500,
+    airportFreeWaitMinutes: 60,
+    pickupGraceMinutes: 15,
+    cancellationFreeHours: 72,
+    meetAndGreetFree: true,
+  },
+  partnerVehicles: {},
 };

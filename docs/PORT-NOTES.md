@@ -151,6 +151,49 @@ From nier-final commits 4482b91 (Oct 11), 33d4e33 (Oct 26), e4eb6d8 (Nov 2) and
 - New time-zone fallbacks read `SITE.timezone` instead of a fixed zone.
 - No schema changes.
 
+## Synced from nier-final on 2026-11-06 — Patch B (booking tool, booking rules, fleet prices)
+
+From nier-final commits ba053de, 29fb3a7, 84a0415, e7732c2 (Oct 4–13) and
+092f22e, a40e8e4, 215fe5e, 757ec33 (Nov 4).
+
+- **Booking tool step 1:** pick the service first; airports as a radio list;
+  pickup, drop-off and map in the same order for every service; passengers and
+  luggage after date and time; "Add a return ride"; a "What's included" box on
+  airport rides.
+- **Booking rules in one place.** `src/lib/booking/rules.ts` holds the lead
+  time, hourly minimum, stop fee, free wait times, cancellation policy and
+  meet & greet, plus the "What's included" lists. The public, corporate and
+  admin booking tools and the server actions that save bookings
+  (`createBookingRequest`, `createTripGroupBooking`, the corporate actions,
+  `updateHoursRequested`, `getBookingEstimateData`) all read it.
+  Unlike Nier, the numbers come from **`SITE.booking`** in
+  `src/config/site.ts`. The defaults are Nier's: 36-hour lead time, 2-hour
+  minimum, $15 per stop, 60 min free airport wait, 15 min grace elsewhere,
+  72-hour free cancellation, free meet & greet. `calcQuote.ts` reads the stop
+  fee from the same place, and the old `stopCount * 1500` fallbacks on the
+  booking, trip, pay-success, invoice and email pages now use it too.
+- **Partner vehicles.** `src/lib/booking/partnerVehicles.ts` is generic: list a
+  partner's vehicles in `SITE.partnerVehicles` (empty by default) and the
+  public and corporate tools hide them (`PUBLIC_VEHICLE_WHERE`), while a
+  partner page passes its id as `partnerTool` to book them.
+- **Live prices for fleet pages.** Admin → Vehicle Categories has a
+  "Website fleet page" setting (`Vehicle.fleetSlug`, choices from
+  `fleetData` via `src/lib/fleetPages.ts`). `getFleetRatesBySlug()` /
+  `getFleetRates(slug)` in `src/lib/booking/publicRates.ts` return the hourly
+  rate, hourly minimum, one-way and airport "from" prices for a fleet page,
+  calculated from the same admin rates as the booking tool. Use them when you
+  design `/fleet` and `/fleet/[slug]` so the site can't show a different price
+  than the booking tool quotes.
+- **Pre-filled booking links.** `/book?trip=from-airport&airport=PHX` (or
+  `to-airport`, matched on the airport's IATA code) opens the tool filled in
+  (`src/lib/booking/linkPrefill.ts`). Use these on airport pages and buttons.
+- **Google Maps loads once.** `src/lib/googleMaps.ts` is the shared loader;
+  `RoutePicker` reuses Maps if a page already loaded it and carries the route
+  distance over correctly (fixes wrong miles when arriving from another page).
+- The booking tool's "call us" links (including a malformed one under "No
+  vehicles available") now use `SITE.phone`. Nier's number had been left in it.
+- **Schema:** `Vehicle.fleetSlug String?` with an index. Run `npx prisma db push`.
+
 ## Known follow-ups (not blocking)
 
 - Marketing copy in `HomePage`, `AboutPage`, `Stats`, etc. is Nier's story with
