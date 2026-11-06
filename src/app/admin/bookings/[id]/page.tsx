@@ -44,6 +44,7 @@ import { getSavedCardForBooking } from "../../../../../actions/payments/chargeCa
 import SendEstimateButton from "./SendEstimateButton";
 import SendBalanceReminderButton from "./SendBalanceReminderButton";
 import DepositSetupClient from "@/components/admin/DepositSetupClient/DepositSetupClient";
+import { formatDueDate } from "@/lib/booking/dueDates";
 import BookingDetailTabs, {
   type BookingTab,
 } from "@/components/admin/BookingDetailTabs/BookingDetailTabs";
@@ -964,20 +965,8 @@ export default async function AdminBookingDetailPage({
               (booking.totalCents * Number(booking.depositPercent)) / 100,
             )
           : (booking.balanceCents ?? null),
-      depositDueDate: booking.depositDueDate
-        ? new Intl.DateTimeFormat("en-US", {
-            month: "long",
-            day: "numeric",
-            year: "numeric",
-          }).format(booking.depositDueDate)
-        : null,
-      balanceDueDate: booking.balanceDueDate
-        ? new Intl.DateTimeFormat("en-US", {
-            month: "long",
-            day: "numeric",
-            year: "numeric",
-          }).format(booking.balanceDueDate)
-        : null,
+      depositDueDate: formatDueDate(booking.depositDueDate),
+      balanceDueDate: formatDueDate(booking.balanceDueDate),
     };
   }
 
@@ -2091,7 +2080,7 @@ export default async function AdminBookingDetailPage({
                                 ? `Paid on ${formatDateTime(booking.payment.paidAt, companyTz)}`
                                 : "Paid"
                               : booking.depositDueDate
-                                ? `Due by ${formatDateTime(booking.depositDueDate, companyTz)}`
+                                ? `Due by ${formatDueDate(booking.depositDueDate)}`
                                 : "Not yet paid"}
                           </p>
                         </div>
@@ -2325,7 +2314,15 @@ export default async function AdminBookingDetailPage({
                         label = "Estimate sent";
                       } else if (eventType === "BALANCE_REMINDER_SENT") {
                         tone = "accent";
-                        label = "Balance reminder sent";
+                        label =
+                          metadata?.kind === "due_date"
+                            ? "Balance reminder sent (balance due date)"
+                            : metadata?.kind === "before_pickup"
+                              ? "Balance reminder sent (48 hours before)"
+                              : "Balance reminder sent";
+                      } else if (eventType === "DEPOSIT_REMINDER_SENT") {
+                        tone = "accent";
+                        label = "Deposit reminder sent (deposit due date)";
                       } else if (eventType === "TRIP_REMINDER_SENT") {
                         tone = "accent";
                         label =
@@ -2335,6 +2332,11 @@ export default async function AdminBookingDetailPage({
                       } else if (eventType === "PAYMENT_REMINDER_SENT") {
                         tone = "accent";
                         label = "Payment reminder sent";
+                      } else if (eventType === "REVIEW_REQUEST_SENT") {
+                        tone = metadata?.failed ? "warn" : "accent";
+                        label = metadata?.failed
+                          ? "Review request failed"
+                          : "Review request emailed";
                       } else if (eventType === "ADMIN_ALERT_SENT") {
                         tone = "warn";
                         label = "Admin alert sent (needs attention)";

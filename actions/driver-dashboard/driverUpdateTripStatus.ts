@@ -6,6 +6,7 @@ import { syncDriverPaySafely } from "@/lib/drivers/driverPay";
 import { auth } from "../../auth";
 import { BookingStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { sendCustomerTripNotification } from "@/lib/notifications/customerNotifications";
 
 // Valid status transitions for drivers
 const VALID_FORWARD_TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
@@ -177,6 +178,24 @@ export async function driverUpdateTripStatus(input: UpdateTripStatusInput) {
         },
       });
     });
+
+    // Send customer notification by email (non-blocking)
+    const customerEmail = booking.user?.email || booking.guestEmail;
+    const customerName =
+      booking.user?.name?.trim() || booking.guestName?.trim() || "Customer";
+
+    if (customerEmail) {
+      // Fire and forget - don't block the response
+      sendCustomerTripNotification({
+        status: newStatus,
+        customerEmail,
+        customerName,
+        pickupAddress: booking.pickupAddress,
+        driverName: session.user.name || "Your driver",
+      }).catch((err) => {
+        console.error("Failed to send customer notification:", err);
+      });
+    }
 
     // Completed: fill in the driver's default pay and tips.
     if (newStatus === BookingStatus.COMPLETED) {

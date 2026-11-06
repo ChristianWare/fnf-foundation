@@ -9,6 +9,9 @@ export async function sendAdminNotificationEmail(args: {
 }) {
   const apiKey = process.env.RESEND_API_KEY;
   const from =
+    // RESEND_FROM first: it's the verified sender every other email uses.
+    // EMAIL_FROM is an older fallback.
+    process.env.RESEND_FROM ||
     process.env.EMAIL_FROM ||
     `${SITE.name} <${SITE.email.noReply}>`;
 

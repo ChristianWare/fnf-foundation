@@ -116,6 +116,41 @@
 - Schema: three nullable/defaulted columns on `Invoice` — run `npx prisma db push`.
 - Placeholders in the address fields made neutral (`City`, `12345`).
 
+## Synced from nier-final on 2026-11-06 — Patch A (payments, emails, reviews, trip updates)
+
+From nier-final commits 4482b91 (Oct 11), 33d4e33 (Oct 26), e4eb6d8 (Nov 2) and
+81971d2 (Nov 4).
+
+- **Deposit received → balance due.** When a deposit is paid, the rider gets a
+  balance-due email with the amount still owed and its due date
+  (`src/lib/email/sendBalanceDueEmail.ts`). The pay page and checkout show the
+  balance after a deposit; the Stripe webhook, `checkoutCharge.ts`, the
+  deposit-link and payment-confirmation emails, the admin "Send payment link"
+  button and "Send balance reminder" all follow. Due dates are worked out in
+  the company's time zone by `src/lib/booking/dueDates.ts`.
+- **Due-date reminders** run in `src/lib/reminders/rideReminders.ts` (same
+  cron as the other ride reminders) and show on the admin booking page under
+  Reminders sent.
+- **Google review requests.** About 2 hours after a ride is completed the rider
+  gets one review-request email (`src/lib/reminders/reviewRequests.ts`, run
+  from `/api/internal/notifications/process`). Off until `GOOGLE_REVIEW_URL`
+  is set. Never sent between 9 pm and 8 am company time, at most once per
+  rider every 90 days, only after the last leg of a multi-leg trip, and not for
+  corporate-account rides. Each request shows on the booking's timeline and in
+  Reminders sent.
+- **`/review`** redirects to `GOOGLE_REVIEW_URL` (homepage until it's set), for
+  QR codes and receipts.
+- **Rider trip updates by email.** When the driver marks a trip En route,
+  Arrived or No-show, the rider gets an email
+  (`src/lib/notifications/customerNotifications.ts`, called from
+  `actions/driver-dashboard/driverUpdateTripStatus.ts`). This replaces the
+  Twilio customer texts removed in the original port. Riders still get no texts.
+- **Sender address.** Reminder, admin-notification and test emails now use
+  `RESEND_FROM` first, then `EMAIL_FROM`, then `SITE.email.noReply`, so every
+  email goes out from the one verified sender.
+- New time-zone fallbacks read `SITE.timezone` instead of a fixed zone.
+- No schema changes.
+
 ## Known follow-ups (not blocking)
 
 - Marketing copy in `HomePage`, `AboutPage`, `Stats`, etc. is Nier's story with

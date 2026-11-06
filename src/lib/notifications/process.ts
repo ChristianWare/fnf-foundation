@@ -34,10 +34,8 @@ export async function processPendingNotificationJobs(args?: {
           text: j.body,
         });
       } else if (j.channel === "SMS") {
-        await sendSmsViaEmailGateway({
-          to: j.to,
-          body: j.body,
-        });
+        // `to` is a carrier email-to-SMS gateway address (see queue.ts).
+        await sendSmsViaEmailGateway({ to: j.to, body: j.body });
       }
 
       await db.notificationJob.update({
