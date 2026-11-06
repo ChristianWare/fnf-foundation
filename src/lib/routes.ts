@@ -8,6 +8,18 @@ export type RouteEntry = {
   destination: string;
   /** Slug of the airport page this route lands at, if any */
   airportSlug?: string;
+  /**
+   * Heading when riders search this route with another word, e.g.
+   * "Private Tucson to Phoenix Shuttle & Car Service". Put the same word in
+   * the page title. Default: "[Origin] to [Destination] Car Service".
+   */
+  h1?: string;
+  /**
+   * Set on routes riders search with "shuttle" to show a private vs. shared
+   * shuttle comparison table (pickup, drop-off, departure, stops, who rides,
+   * price, best for). Don't quote other companies' prices.
+   */
+  shuttle?: { intro: string; sharedDropoff: string; privateDropoff: string };
 };
 
 export const routesData: readonly RouteEntry[] = [

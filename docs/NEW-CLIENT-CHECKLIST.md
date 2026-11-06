@@ -38,7 +38,10 @@ cp .env.example .env    # fill it in
 ## 3. Configure (30 min)
 
 - [ ] `src/config/site.ts` — every field. `url` decides whether www or apex is canonical.
-- [ ] `src/app/globals.css` — `:root` color tokens. `src/app/layout.tsx` — font.
+- [ ] `src/config/site.ts` → `booking` — the client's lead time, hourly minimum, stop fee, free wait times, cancellation window and meet & greet. The booking tools, prices and policy copy all read these.
+- [ ] `src/config/site.ts` → `partnerVehicles` — only if the client has a partner booking page (a hotel or club with its own booking tool)
+- [ ] `src/app/layout.tsx` — the font is served from `src/app/fonts`; swap the files to change it
+- [ ] `src/app/globals.css` — `:root` color tokens.
 - [ ] `public/brand/logo.png`, `public/brand/og-image.png` (1200×630)
 - [ ] `src/app/favicon.ico`, `src/app/apple-touch-icon.png` (180×180), `public/icons/pwa-*.png`
 - [ ] `public/sw.js` — nothing to change (brand-neutral), but bump `CACHE_NAME` if you edit it
@@ -57,11 +60,11 @@ Vehicle categories + photos, Drivers (invite), office hours.
 ## 5. Content (this is the real work — the design phase)
 
 - [ ] `src/lib/services.ts` — the client's services (one entry = one `/services/[slug]` page)
-- [ ] `src/lib/cities.ts` — service-area cities (one entry = one `/locations/[city]` page). Only cities you can make locally real.
+- [ ] `src/lib/cities.ts` — service-area cities (one entry = one `/locations/[city]` page). Only cities you can make locally real: each needs its own 4–5 FAQs, a route promo and nearby-city links before it goes live.
 - [ ] `src/lib/routes.ts` — "[Suburb] to [Airport]" route pages
-- [ ] `src/lib/airports.ts`, `arizonaAirports.ts` — airports served
+- [ ] `src/lib/airports.ts` — airports served (match Admin → Airports)
 - [ ] `src/lib/data.ts` — home page copy, testimonials, FAQs, stats
-- [ ] `content/blog/*.mdx` — delete the Phoenix examples or rewrite them
+- [ ] `content/blog/*.mdx` — replace the sample post
 - [ ] `public/images/**` — drop the client's photos in over the placeholders, **same filenames**
 - [ ] Public pages — each renders `PagePlaceholder` with a section list. Build the real page in its place; keep the working forms/lists it wraps.
 - [ ] Legal pages (`/privacy`, `/terms`) — read once; business terms may differ
@@ -71,6 +74,7 @@ Vehicle categories + photos, Drivers (invite), office hours.
 - [ ] Vercel project → import the client repo → add every `.env` value (use production Stripe keys when ready)
 - [ ] Domain → set `APP_URL`, `NEXT_PUBLIC_APP_URL`, `BASE_URL` to the real origin
 - [ ] Stripe webhook → `https://<domain>/api/stripe/webhook` → paste secret into `STRIPE_WEBHOOK_SECRET`
+- [ ] `GOOGLE_REVIEW_URL` → the client's Google review link (turns on post-ride review emails and the `/review` short link)
 - [ ] Cron → `vercel.json` already schedules `/api/internal/notifications/process` (every 5 min) and `/api/cron/purge-trash` (daily); `CRON_SECRET` must be set
 - [ ] Google OAuth redirect URI (if used) → `https://<domain>/api/auth/callback/google`
 
@@ -86,6 +90,9 @@ Vehicle categories + photos, Drivers (invite), office hours.
 - [ ] Click the pay link in the invoice email — it must open the live domain,
       not localhost (`APP_URL` set in production)
 - [ ] `/sitemap.xml`, `/robots.txt`, `/llms.txt`, `/manifest.webmanifest` render with the client's name
+- [ ] Pay a deposit on a test booking → the balance-due email arrives with the right amount and due date
+- [ ] Mark a test trip En route as the driver → the rider gets the trip-update email
+- [ ] `/login`, `/register` and `/corporate` are `noindex` (view source → `<meta name="robots"`)
 - [ ] Run a Lighthouse pass on mobile
 
 ## 8. Hand-off
@@ -93,3 +100,11 @@ Vehicle categories + photos, Drivers (invite), office hours.
 - [ ] Admin → Company Settings filled in by the operator (hours, dispatch phone, socials)
 - [ ] Operator has their admin login; you keep a separate admin account
 - [ ] `Search the repo for "example.com"` — should return nothing
+
+## 9. Search, first month
+
+- [ ] Google Search Console → add the domain → submit `/sitemap.xml`
+- [ ] URL Inspection → Request indexing for the home page, each service, airport and route page, then the city pages, about 10 a day
+- [ ] One booking keyword per page: home owns "black car service [metro]", each airport page owns "[airport] car service", each city page owns "car service [city]". Check that no other page's title uses the same phrase
+- [ ] After 2–3 weeks, Pages report → "Crawled – currently not indexed": `/_next/static` files and redirected URLs are normal; a real page there usually needs more content of its own
+

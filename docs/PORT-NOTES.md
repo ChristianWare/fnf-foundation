@@ -194,6 +194,42 @@ From nier-final commits ba053de, 29fb3a7, 84a0415, e7732c2 (Oct 4–13) and
   vehicles available") now use `SITE.phone`. Nier's number had been left in it.
 - **Schema:** `Vehicle.fleetSlug String?` with an index. Run `npx prisma db push`.
 
+## Synced from nier-final on 2026-11-06 — Patch C (search, fonts, fixes, guides)
+
+From nier-final commits 60638a5, de0587e and 643c650, plus what Nier's
+November indexing work taught us.
+
+- **`noindex` on portal pages.** `src/app/(auth)/layout.tsx` marks login,
+  register and the password pages `noindex, follow`; the corporate portal
+  layout is `noindex, nofollow`. (Admin, driver and rider dashboards were
+  already blocked in `robots.ts`.) `/studio` is gone from `robots.ts`.
+- **One business entity.** `src/lib/schema.ts` builds the site-wide
+  `LocalBusiness` JSON-LD from `SITE` plus the profile URLs in Company
+  Settings, with a stable `@id`. Page-level schema should point at it with
+  `provider: BUSINESS_REF` instead of repeating name, phone and address. It
+  replaces the inline Organization block in the root layout. The layout
+  reads Company Settings and falls back to `SITE` if the database is down.
+- **Fonts from local files.** Inter is served from `src/app/fonts` with
+  `next/font/local`, so the build no longer downloads Google Fonts (that
+  download failing broke a Nier deploy). Same `--inter` variable.
+- Removed a leftover Nier image preload (Cloudinary `phx-poster`) from the
+  root layout.
+- **Fix:** the empty state on `/dashboard/trips` linked to `/booking` (404);
+  it now goes to `/book`.
+- **Content types** gained the optional fields the public pages will need:
+  `CityEntry.faqs / routePromo / nearby`, `RouteEntry.h1 / shuttle`,
+  `AirportEntry.nearbyCities / relatedPosts`. Example airport note corrected
+  (Sky Harbor has Terminals 3 and 4).
+- **Page guides** (`pageGuides.ts`): one booking keyword per page (home owns
+  "black car service [metro]"), city pages need their own FAQs, route promo and
+  nearby links, shuttle wording and comparison on route pages, pre-filled
+  `/book?trip=…&airport=…` links on airport pages, fleet prices from
+  `publicRates.ts`.
+- **Checklist:** `SITE.booking`, `partnerVehicles`, fonts and
+  `GOOGLE_REVIEW_URL` in setup; deposit, trip-update and `noindex` checks in
+  the smoke test; a new "Search, first month" section. Removed references to
+  files that no longer exist (`arizonaAirports.ts`, the Phoenix blog posts).
+
 ## Known follow-ups (not blocking)
 
 - Marketing copy in `HomePage`, `AboutPage`, `Stats`, etc. is Nier's story with

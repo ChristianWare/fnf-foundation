@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 import Footer from "@/components/shared/Footer/Footer";
@@ -8,12 +8,48 @@ import ToastsProvider from "@/components/Providers/ToastsProvider";
 import ScrollToTop from "@/components/shared/ScrollToTop/ScrollToTop";
 import PlausibleProvider from "next-plausible";
 import { SITE } from "@/config/site";
-import { serviceAreaCities } from "@/lib/cities";
+import { buildBusinessSchema } from "@/lib/schema";
+import { getCompanySettings } from "../../actions/admin/companySettings";
 
-const inter = Inter({
+// Inter, served from src/app/fonts so the build never depends on downloading
+// Google Fonts (a failed download breaks the Vercel build). To change the
+// font per client: drop the .woff2 files in src/app/fonts and update the
+// paths below, keeping the "--inter" variable name or updating globals.css.
+const inter = localFont({
   variable: "--inter",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "800", "900"],
+  display: "swap",
+  src: [
+    {
+      path: "./fonts/inter-latin-300-normal.woff2",
+      weight: "300",
+      style: "normal",
+    },
+    {
+      path: "./fonts/inter-latin-400-normal.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "./fonts/inter-latin-500-normal.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "./fonts/inter-latin-600-normal.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "./fonts/inter-latin-800-normal.woff2",
+      weight: "800",
+      style: "normal",
+    },
+    {
+      path: "./fonts/inter-latin-900-normal.woff2",
+      weight: "900",
+      style: "normal",
+    },
+  ],
 });
 
 export const metadata: Metadata = {
@@ -44,56 +80,25 @@ export const metadata: Metadata = {
     images: [`${SITE.url}${SITE.ogImage}`],
   },
 };
-const organizationSchema = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: SITE.name,
-  url: SITE.url,
-  logo: `${SITE.url}/brand/logo.png`,
-  image: `${SITE.url}/brand/logo.png`,
-  telephone: SITE.phone.tel,
-  email: SITE.email.info,
-  address: {
-    "@type": "PostalAddress",
-    streetAddress: SITE.address.street,
-    addressLocality: SITE.address.city,
-    addressRegion: SITE.address.state,
-    postalCode: SITE.address.zip,
-    addressCountry: "US",
-  },
-  areaServed: serviceAreaCities.map((c) => `${c.name}, ${SITE.market.stateCode}`),
-  sameAs: Object.values(SITE.social).filter(Boolean),
-};
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Same settings the footer reads; its profile URLs feed `sameAs`/`hasMap`.
+  // If the database can't be reached, the schema falls back to site config.
+  const settings = await getCompanySettings().catch(() => ({}));
+  const businessSchema = buildBusinessSchema(settings);
+
   return (
     <html lang='en'>
       <head>
-      
-        {/* ── Cloudinary preconnect ── */}
-        {/* <link rel='preconnect' href='https://res.cloudinary.com' /> */}
-        {/* <link
-          rel='preload'
-          href='https://res.cloudinary.com/dkxlrhwjd/video/upload/q_auto/phx_y9t0y5.mp4'
-          as='video'
-          type='video/mp4'
-        /> */}
         <link rel='preconnect' href='https://plausible.io' />
-
         <link
           rel='preconnect'
           href='https://res.cloudinary.com'
           crossOrigin='anonymous'
-        />
-        <link
-          rel='preload'
-          as='image'
-          href='https://res.cloudinary.com/dkxlrhwjd/image/upload/w_750,q_60,f_auto/phx-poster_bps55j'
-          media='(max-width: 768px)'
         />
 
         {/* ── PWA ── */}
@@ -110,7 +115,7 @@ export default function RootLayout({
         <script
           type='application/ld+json'
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(organizationSchema),
+            __html: JSON.stringify(businessSchema),
           }}
         />
         <ScrollToTop />

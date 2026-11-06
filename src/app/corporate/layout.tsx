@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import type { Metadata } from "next";
 import styles from "./CorporateLayout.module.css";
 import { auth } from "../../../auth";
 import { redirect } from "next/navigation";
@@ -10,6 +11,11 @@ import { SITE } from "@/config/site";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+// The corporate portal is for signed-in account users only.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 type AppRole = "USER" | "ADMIN" | "DRIVER" | "CORPORATE";
 

@@ -60,6 +60,10 @@ export const guides = {
         note: "Five or six booking questions (pricing, cancellations, flight delays, car seats, gratuity) with FAQ schema.",
       },
       {
+        name: "Search keyword",
+        note: "The home page is the one page that targets \"black car service [metro]\" and \"limo service [metro]\". Keep those phrases out of every other page's title and H1 (services, fleet, about, book) so pages don't compete, and link to / with that phrase from the service-area hub and blog posts.",
+      },
+      {
         name: "Final CTA",
         note: "Book now plus the phone number, large.",
       },
@@ -188,7 +192,7 @@ export const guides = {
       },
       {
         name: "Vehicle cards",
-        note: "One per class: real photo, passenger count, luggage count, best for, link to the detail page.",
+        note: "One per class: real photo, passenger count, luggage count, best for, \"from\" price (getFleetRatesBySlug() in src/lib/booking/publicRates.ts), link to the detail page.",
       },
       {
         name: "Book CTA",
@@ -217,7 +221,7 @@ export const guides = {
       },
       {
         name: "Pricing note",
-        note: "Hourly minimum or typical airport rate.",
+        note: "Hourly rate and minimum, one-way and airport \"from\" prices. Read them with getFleetRates(slug) from src/lib/booking/publicRates.ts after linking the vehicle category to this page in Admin → Vehicle Categories, so the page always matches the booking tool.",
       },
       {
         name: "Book this vehicle",
@@ -283,12 +287,16 @@ export const guides = {
         note: "Sprinter and coach options.",
       },
       {
+        name: "Nearby cities and guides",
+        note: "Links to the 3–5 closest city pages and any blog guides about this airport (airports.ts: nearbyCities, relatedPosts).",
+      },
+      {
         name: "FAQ",
         note: "With FAQ schema.",
       },
       {
         name: "Book CTA",
-        note: "Repeat at the end.",
+        note: "Repeat at the end. Link to /book?trip=from-airport&airport=[CODE] (pickups) or trip=to-airport (drop-offs) so the booking tool opens with the airport filled in.",
       },
     ],
     data: "src/lib/airports.ts (one entry per page)",
@@ -376,8 +384,16 @@ export const guides = {
         note: "A review from a customer in this city.",
       },
       {
+        name: "Route promo",
+        note: "One callout for the ride this city books most, linking to its airport or route page (cities.ts: routePromo).",
+      },
+      {
+        name: "Nearby areas",
+        note: "3–5 links to neighboring city pages as \"Car service in [City]\" (cities.ts: nearby). Every city page should be linked from at least two others.",
+      },
+      {
         name: "FAQ",
-        note: "With FAQ schema.",
+        note: "4–5 questions written for this city only, with FAQ schema (cities.ts: faqs). City pages without unique FAQs were the ones Google crawled and didn't index. If you can't write them for a city, don't publish the page.",
       },
       {
         name: "Book CTA",
@@ -429,6 +445,14 @@ export const guides = {
       {
         name: "Vehicle options",
         note: "Sedan, SUV, Sprinter with prices for this route.",
+      },
+      {
+        name: "Shuttle comparison",
+        note: "If riders search the route with \"shuttle\", say it in the title and H1 (\"Private [Origin] to [Destination] Shuttle & Car Service\") and add a private vs. shared shuttle table (routes.ts: h1, shuttle). No competitor prices.",
+      },
+      {
+        name: "Endpoint links",
+        note: "Link the city pages at both ends of the route and, for airport runs, the airport page as \"[Airport] car service\".",
       },
       {
         name: "Book CTA",
